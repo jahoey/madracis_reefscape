@@ -24,6 +24,13 @@ depth <- names_split[,3]
 id_original <- paste(names_split[,4], names_split[,5], sep = "_")
 extract <- names_split[,6]
 
+# What is the average coverage across all 96 samples in library 1?
+mean(msen_denovo_mapping_stats$coverage_mean) # 2.15X
+mean(msen_denovo_mapping_stats$coverage_sd) # 13.7X
+mean(msen_denovo_mapping_stats$number_of_reads) # 10687847
+mean(msen_denovo_mapping_stats$number_of_mapped_reads) # 9622868
+mean(msen_denovo_mapping_stats$mean_mapping_quality) # 20.05
+
 # Set color scheme
 col <- viridis(6)
 

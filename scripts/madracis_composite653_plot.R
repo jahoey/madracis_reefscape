@@ -61,24 +61,37 @@ madracis_tree <- nj(m)
 # Symbiont data
 
 
-#### Load bam names to assign species ####
-bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list_653.txt"), header = FALSE, sep = '\t', col.names = c('path'))
+#### Option 1: Load bam names to assign species ####
+# bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list_653.txt"), header = FALSE, sep = '\t', col.names = c('path'))
+# 
+# # Split file paths to extract metadata
+# names <- str_split_fixed(bam_paths$path, '.dedup.overlapclipped.bam', 2) # Get rid of suffix
+# names2 <- str_split_fixed(names[,1], '/', 8)
+# names3 <- sub('_tech_', '_', names2[,8]) # remove 'tech' prefix of technical replicates so that str_split_fixed will work well
+# metadata <- as.data.frame(str_split_fixed(names3, '_', 7))
+# colnames(metadata) <- c('merged', 'species', 'site', 'depth', 'collector', 'ID', 'extract')
+# 
+# species <- metadata[,2]
+# site <- metadata[,3]
+# depth <- as.numeric(metadata[,4]) # Must be numeric or the subsetting gets very weird
+# id_original <- paste(metadata[,5], metadata[,6], sep = "_")
+# extract <- metadata[,7]
+# 
+# names4 <- paste(species, site, depth, id_original, extract, sep = "_")
 
-# Split file paths to extract metadata
-names <- str_split_fixed(bam_paths$path, '.dedup.overlapclipped.bam', 2) # Get rid of suffix
-names2 <- str_split_fixed(names[,1], '/', 8)
-names3 <- sub('_tech_', '_', names2[,8]) # remove 'tech' prefix of technical replicates so that str_split_fixed will work well
-metadata <- as.data.frame(str_split_fixed(names3, '_', 7))
-colnames(metadata) <- c('merged', 'species', 'site', 'depth', 'collector', 'ID', 'extract')
+#### Option 2: Load IDs directly ####
+ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE)
 
-species <- metadata[,2]
-site <- metadata[,3]
-depth <- as.numeric(metadata[,4]) # Must be numeric or the subsetting gets very weird
-id_original <- paste(metadata[,5], metadata[,6], sep = "_")
-extract <- metadata[,7]
+metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
+colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
 
-names4 <- paste(species, site, depth, id_original, extract, sep = "_")
+species <- metadata[,1]
+site <- metadata[,2]
+depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
+id_original <- paste(metadata[,4], metadata[,5], sep = "_")
+extract <- metadata[,6]
 
+#### Organize MPHA ####                        
 # Split out MPHA by depth
 species_mpha <- species
 species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
@@ -88,7 +101,8 @@ species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at
 species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) #reorder the species factors
 
 #### Add labels ####
-madracis_tree$tip.label <- names4
+# madracis_tree$tip.label <- names4 # when bamlist is used
+madracis_tree$tip.label <- ids$new_ID # when ids area directly read in
 
 # madracis_clusters_k5 <- cbind(names4, madracis_clusters_k5)
 # madracis_clusters_k6 <- cbind(names4, madracis_clusters_k6)
@@ -97,9 +111,9 @@ madracis_tree$tip.label <- names4
 #### Data manipulation ####
 # Reroot M. senaria
 is.rooted (madracis_tree)
-outgroup <- c("MCAR_est_20_JH_0336_E0061", "MDEC_hul_20_JH_0684_E0228", "MDEC_kal_10_JH_0089_E0485", "MFOR_sna_10_JH_0068_E0030", "MPHA_dir_20_JH_0635_E0597", "MPHA_est_10_JH_0285_E0448", "MPHA_est_10_JH_0289_E0311", "MPHA_est_10_JH_0383_E0679", "MPHA_est_10_JH_0398_E0375", "MPHA_est_10_JH_0503_E0133", "MPHA_est_10_JH_0514_E0480", "MPHA_est_20_JH_0462_E0399", "MPHA_est_20_JH_0489_E0232", "MPHA_est_5_JH_0344_E0608",  "MPHA_hul_20_JH_0668_E0525", "MPHA_hul_20_JH_0685_E0116", "MPHA_hul_20_JH_0690_E0140", "MPHA_kal_10_JH_0134_E0542", "MPHA_kal_20_JH_0196_E0115", "MPHA_kal_20_JH_0224_E0119", "MPHA_sna_10_JH_0001_E0610", "MPHA_sna_10_JH_0011_E0361", "MPHA_sna_10_JH_0012_E0470", "MPHA_sna_10_JH_0061_E0358", "MPHA_sna_10_JH_0070_E0611", "MPHA_sna_10_JH_0071_E0089", "MPHA_sna_10_JH_0072_E0544", "MPHA_sna_20_JH_0697_E0005", "MPHA_sna_20_JH_0707_E0201", "MPHA_wat_20_JH_0608_E0710", "MPHA_wat_20_JH_0630_E0084", "MPHA_wat_5_JH_0626_E0186",  "MPHA_est_20_JH_0356_E0616", "MSEN_dir_20_JH_0638_E0699", "MSEN_dir_20_JH_0641_E0258", "MSEN_dir_20_JH_0650_E0230", "MSEN_est_10_JH_0266_E0579", "MSEN_est_10_JH_0271_E0021", "MSEN_est_10_JH_0274_E0437", "MSEN_est_10_JH_0283_E0075", "MSEN_est_10_JH_0290_E0143", "MSEN_est_10_JH_0382_E0039", "MSEN_est_10_JH_0385_E0240", "MSEN_est_10_JH_0392_E0490", "MSEN_est_10_JH_0396_E0408", "MSEN_est_10_JH_0426_E0463", "MSEN_est_10_JH_0511_E0661", "MSEN_est_20_JH_0335_E0602", "MSEN_est_20_JH_0473_E0256", "MSEN_est_20_JH_0496_E0288", "MSEN_est_5_JH_0414_E0181", "MSEN_hul_20_JH_0691_E0343", "MSEN_kal_10_JH_0090_E0578", "MSEN_kal_10_JH_0122_E0515", "MSEN_kal_10_JH_0124_E0066", "MSEN_kal_10_JH_0125_E0445", "MSEN_kal_10_JH_0128_E0381", "MSEN_kal_10_JH_0190_E0328", "MSEN_kal_10_JH_0548_E0550", "MSEN_kal_10_JH_0550_E0349", "MSEN_kal_20_JH_0159_E0334", "MSEN_kal_20_JH_0161_E0647", "MSEN_kal_20_JH_0165_E0656", "MSEN_kal_20_JH_0204_E0460", "MSEN_kal_20_JH_0208_E0008", "MSEN_kal_20_JH_0226_E0019", "MSEN_kal_20_JH_0227_E0567", "MSEN_kal_20_JH_0231_E0177", "MSEN_kal_20_JH_0232_E0675", "MSEN_kal_20_JH_0240_E0193", "MSEN_kal_20_JH_0245_E0663", "MSEN_kal_20_JH_0538_E0569", "MSEN_kal_5_JH_0564_E0669",  "MSEN_sea_10_JH_0530_E0384", "MSEN_sea_10_JH_0536_E0371", "MSEN_sea_20_JH_0518_E0120", "MSEN_sea_20_JH_0519_E0022", "MSEN_sea_20_JH_0523_E0497", "MSEN_sea_20_JH_0524_E0600", "MSEN_sea_20_JH_0525_E0051", "MSEN_sea_20_JH_0528_E0549", "MSEN_sna_10_JH_0024_E0652", "MSEN_sna_10_JH_0030_E0461", "MSEN_sna_10_JH_0031_E0621", "MSEN_sna_10_JH_0590_E0053", "MSEN_sna_20_JH_0040_E0503", "MSEN_sna_20_JH_0043_E0326", "MSEN_sna_20_JH_0045_E0199", "MSEN_sna_20_JH_0580_E0531", "MSEN_sna_20_JH_0586_E0391", "MSEN_sna_20_JH_0709_E0100", "MSEN_sna_20_JH_0712_E0372", "MSEN_sna_5_JH_0601_E0329",  "MSEN_wat_20_JH_0607_E0368", "MSEN_wat_20_JH_0622_E0303", "MSEN_wat_20_JH_0623_E0103", "MSEN_wat_20_JH_0631_E0162", "MSEN_wat_5_JH_0627_E0351", "MSEN_est_20_JH_0363_E0468", "MSEN_kal_10_JH_0085_E0667", "MSEN_sna_20_JH_0041_E0584", "MSEN_sna_20_JH_0052_E0357", "SINT_sna_20_JH_0013_E0713", "UNKN_est_10_JH_0311_E0564", "UNKN_est_10_JH_0314_E0547", "UNKN_est_10_JH_0316_E0218", "UNKN_est_10_JH_0327_E0624", "UNKN_est_20_JH_0306_E0261", "UNKN_est_20_JH_0307_E0090", "UNKN_est_20_JH_0463_E0322", "UNKN_est_20_JH_0464_E0572", "UNKN_est_20_JH_0472_E0670", "UNKN_est_40_JH_0439_E0654", "UNKN_kal_10_JH_0250_E0481", "UNKN_kal_10_JH_0255_E0038", "UNKN_kal_10_JH_0259_E0118", "UNKN_kal_10_JH_0263_E0207", "UNKN_kal_20_JH_0155_E0449", "UNKN_kal_20_JH_0207_E0691", "UNKN_kal_20_JH_0212_E0533", "UNKN_kal_20_JH_0213_E0017", "UNKN_kal_20_JH_0233_E0213", "UNKN_sna_20_JH_0719_E0093", "UNKN_sna_20_JH_0720_E0320")
+# outgroup <- c("MCAR_est_20_JH_0336_E0061", "MDEC_hul_20_JH_0684_E0228", "MDEC_kal_10_JH_0089_E0485", "MFOR_sna_10_JH_0068_E0030", "MPHA_dir_20_JH_0635_E0597", "MPHA_est_10_JH_0285_E0448", "MPHA_est_10_JH_0289_E0311", "MPHA_est_10_JH_0383_E0679", "MPHA_est_10_JH_0398_E0375", "MPHA_est_10_JH_0503_E0133", "MPHA_est_10_JH_0514_E0480", "MPHA_est_20_JH_0462_E0399", "MPHA_est_20_JH_0489_E0232", "MPHA_est_5_JH_0344_E0608",  "MPHA_hul_20_JH_0668_E0525", "MPHA_hul_20_JH_0685_E0116", "MPHA_hul_20_JH_0690_E0140", "MPHA_kal_10_JH_0134_E0542", "MPHA_kal_20_JH_0196_E0115", "MPHA_kal_20_JH_0224_E0119", "MPHA_sna_10_JH_0001_E0610", "MPHA_sna_10_JH_0011_E0361", "MPHA_sna_10_JH_0012_E0470", "MPHA_sna_10_JH_0061_E0358", "MPHA_sna_10_JH_0070_E0611", "MPHA_sna_10_JH_0071_E0089", "MPHA_sna_10_JH_0072_E0544", "MPHA_sna_20_JH_0697_E0005", "MPHA_sna_20_JH_0707_E0201", "MPHA_wat_20_JH_0608_E0710", "MPHA_wat_20_JH_0630_E0084", "MPHA_wat_5_JH_0626_E0186",  "MPHA_est_20_JH_0356_E0616", "MSEN_dir_20_JH_0638_E0699", "MSEN_dir_20_JH_0641_E0258", "MSEN_dir_20_JH_0650_E0230", "MSEN_est_10_JH_0266_E0579", "MSEN_est_10_JH_0271_E0021", "MSEN_est_10_JH_0274_E0437", "MSEN_est_10_JH_0283_E0075", "MSEN_est_10_JH_0290_E0143", "MSEN_est_10_JH_0382_E0039", "MSEN_est_10_JH_0385_E0240", "MSEN_est_10_JH_0392_E0490", "MSEN_est_10_JH_0396_E0408", "MSEN_est_10_JH_0426_E0463", "MSEN_est_10_JH_0511_E0661", "MSEN_est_20_JH_0335_E0602", "MSEN_est_20_JH_0473_E0256", "MSEN_est_20_JH_0496_E0288", "MSEN_est_5_JH_0414_E0181", "MSEN_hul_20_JH_0691_E0343", "MSEN_kal_10_JH_0090_E0578", "MSEN_kal_10_JH_0122_E0515", "MSEN_kal_10_JH_0124_E0066", "MSEN_kal_10_JH_0125_E0445", "MSEN_kal_10_JH_0128_E0381", "MSEN_kal_10_JH_0190_E0328", "MSEN_kal_10_JH_0548_E0550", "MSEN_kal_10_JH_0550_E0349", "MSEN_kal_20_JH_0159_E0334", "MSEN_kal_20_JH_0161_E0647", "MSEN_kal_20_JH_0165_E0656", "MSEN_kal_20_JH_0204_E0460", "MSEN_kal_20_JH_0208_E0008", "MSEN_kal_20_JH_0226_E0019", "MSEN_kal_20_JH_0227_E0567", "MSEN_kal_20_JH_0231_E0177", "MSEN_kal_20_JH_0232_E0675", "MSEN_kal_20_JH_0240_E0193", "MSEN_kal_20_JH_0245_E0663", "MSEN_kal_20_JH_0538_E0569", "MSEN_kal_5_JH_0564_E0669",  "MSEN_sea_10_JH_0530_E0384", "MSEN_sea_10_JH_0536_E0371", "MSEN_sea_20_JH_0518_E0120", "MSEN_sea_20_JH_0519_E0022", "MSEN_sea_20_JH_0523_E0497", "MSEN_sea_20_JH_0524_E0600", "MSEN_sea_20_JH_0525_E0051", "MSEN_sea_20_JH_0528_E0549", "MSEN_sna_10_JH_0024_E0652", "MSEN_sna_10_JH_0030_E0461", "MSEN_sna_10_JH_0031_E0621", "MSEN_sna_10_JH_0590_E0053", "MSEN_sna_20_JH_0040_E0503", "MSEN_sna_20_JH_0043_E0326", "MSEN_sna_20_JH_0045_E0199", "MSEN_sna_20_JH_0580_E0531", "MSEN_sna_20_JH_0586_E0391", "MSEN_sna_20_JH_0709_E0100", "MSEN_sna_20_JH_0712_E0372", "MSEN_sna_5_JH_0601_E0329",  "MSEN_wat_20_JH_0607_E0368", "MSEN_wat_20_JH_0622_E0303", "MSEN_wat_20_JH_0623_E0103", "MSEN_wat_20_JH_0631_E0162", "MSEN_wat_5_JH_0627_E0351", "MSEN_est_20_JH_0363_E0468", "MSEN_kal_10_JH_0085_E0667", "MSEN_sna_20_JH_0041_E0584", "MSEN_sna_20_JH_0052_E0357", "SINT_sna_20_JH_0013_E0713", "UNKN_est_10_JH_0311_E0564", "UNKN_est_10_JH_0314_E0547", "UNKN_est_10_JH_0316_E0218", "UNKN_est_10_JH_0327_E0624", "UNKN_est_20_JH_0306_E0261", "UNKN_est_20_JH_0307_E0090", "UNKN_est_20_JH_0463_E0322", "UNKN_est_20_JH_0464_E0572", "UNKN_est_20_JH_0472_E0670", "UNKN_est_40_JH_0439_E0654", "UNKN_kal_10_JH_0250_E0481", "UNKN_kal_10_JH_0255_E0038", "UNKN_kal_10_JH_0259_E0118", "UNKN_kal_10_JH_0263_E0207", "UNKN_kal_20_JH_0155_E0449", "UNKN_kal_20_JH_0207_E0691", "UNKN_kal_20_JH_0212_E0533", "UNKN_kal_20_JH_0213_E0017", "UNKN_kal_20_JH_0233_E0213", "UNKN_sna_20_JH_0719_E0093", "UNKN_sna_20_JH_0720_E0320")
 
-outgroup <- c("UNKN_kal_40_JH_0147_E0236", "UNKN_kal_40_JH_0105_E0657", "UNKN_sna_60_JH_0075_E0215") # seem like SINT
+outgroup <- c("SINT_kal_40_JH_0105_E0657", "SINT_kal_40_JH_0147_E0236", "SINT_sna_60_JH_0075_E0215") # seem like SINT
 
 madracis_tree_reroot <- root(madracis_tree, outgroup, resolve.root = TRUE)
 is.rooted(madracis_tree_reroot)
@@ -135,7 +149,7 @@ species.table$depth[which(species.table$depth >41 & species.table$depth <=60)] <
 species.table$depth[which(species.table$depth >61)] <- 5 # depths greater than 61
 
 #### Set color scheme ####
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#b0e0e6", "#b6c590", "#6b8e23", "#374618", "#E6AB02", "#2664d8", "gray70") # new colors
+colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "#2664d8", "gray70") # new colors
 show_col(colors_mpha)
 
 # For STRUCTURE plots

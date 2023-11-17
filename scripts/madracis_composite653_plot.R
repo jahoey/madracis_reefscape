@@ -39,13 +39,24 @@ madracis_tree <- nj(m)
 # madracis_clusters_k5 <- read.delim(here("admixture_results/qfiles/K5/madracis87_ngsAdmix_K5_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster1",  "cluster2", "cluster3", "cluster4", "cluster5", "extra"))
 # madracis_clusters_k5 <- madracis_clusters_k5[,-6]
 # 
-# # Cluster assignments (from nsgadmix K=6)
-# madracis_clusters_k6 <- read.delim(here("admixture_results/qfiles/K6/madracis87_ngsAdmix_K6_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster2", "cluster6", "cluster1", "cluster4", "cluster5", "cluster3", "extra"))
-# madracis_clusters_k6 <- madracis_clusters_k6[,-7]
-# 
-# # Cluster assignments (from STRUCTURE K=7)
-# madracis_clusters_k7 <- read.delim(here("admixture_results/qfiles/K7/madracis87_ngsAdmix_K7_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster1", "cluster3", "cluster7", "cluster2", "cluster5", "cluster4", "cluster6", "extra"))
-# madracis_clusters_k7 <- madracis_clusters_k7[,-8]
+# Cluster assignments (from nsgadmix K=6)
+madracis_clusters_k6 <- read.delim(here("admixture_results/madracis653/qfiles/K6/madracis653_ngsAdmix_K6_2_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster2", "cluster1", "cluster6", "cluster3", "cluster5", "cluster4", "extra"))
+madracis_clusters_k6 <- madracis_clusters_k6[,-7]
+
+# Cluster assignments (from nsgadmix K=7)
+madracis_clusters_k7 <- read.delim(here("admixture_results/madracis653/qfiles/K7/madracis653_ngsAdmix_K7_2_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster1", "cluster2", "cluster3", "cluster4", "cluster5", "cluster7", "cluster6", "extra"))
+madracis_clusters_k7 <- madracis_clusters_k7[,-8]
+
+# Cluster assignments (from nsgadmix K=8)
+madracis_clusters_k8_big <- read.delim(here("admixture_results/madracis653/qfiles/K8/madracis653_ngsAdmix_K8_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster4", "cluster8", "cluster6", "cluster5", "cluster7", "cluster2", "cluster1", "cluster3", "extra"))
+madracis_clusters_k8_big <- madracis_clusters_k8_big[,-9]
+
+madracis_clusters_k8 <- read.delim(here("admixture_results/madracis653/qfiles/K8/madracis653_ngsAdmix_K8_2_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster8", "cluster1", "cluster2", "cluster5", "cluster6", "cluster7", "cluster4", "cluster3", "extra"))
+madracis_clusters_k8 <- madracis_clusters_k8[,-9]
+
+# Cluster assignments (from nsgadmix K=9)
+madracis_clusters_k9 <- read.delim(here("admixture_results/madracis653/qfiles/K9/madracis653_ngsAdmix_K9_2_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster8", "cluster6", "cluster9", "cluster5", "cluster1", "cluster7", "cluster3", "cluster4", "cluster2", "extra"))
+madracis_clusters_k9 <- madracis_clusters_k9[,-10]
 
 # DAPC results
 # madracis_dapc <- read.csv(here("data/dapc_results.csv"), header = FALSE, col.names = c("sample_full", "sample", "sample2", "species", "dapc_unsup"))
@@ -108,6 +119,12 @@ madracis_tree$tip.label <- ids$new_ID # when ids area directly read in
 # madracis_clusters_k6 <- cbind(names4, madracis_clusters_k6)
 # madracis_clusters_k7 <- cbind(names4, madracis_clusters_k7)
 
+madracis_clusters_k6 <- cbind(ids$new_ID, madracis_clusters_k6)
+madracis_clusters_k7 <- cbind(ids$new_ID, madracis_clusters_k7)
+madracis_clusters_k8_big <- cbind(ids$new_ID, madracis_clusters_k8_big)
+madracis_clusters_k8 <- cbind(ids$new_ID, madracis_clusters_k8)
+madracis_clusters_k9 <- cbind(ids$new_ID, madracis_clusters_k9)
+
 #### Data manipulation ####
 # Reroot M. senaria
 is.rooted (madracis_tree)
@@ -123,13 +140,15 @@ species.table <- data.frame(sample_full = madracis_tree$tip.label, species = spe
 
 # Format ngsadmix data for ggplot
 # madracis_k5_melt <- melt(madracis_clusters_k5)
-# madracis_k6_melt <- melt(madracis_clusters_k6)
-# madracis_k7_melt <- melt(madracis_clusters_k7)
+madracis_k6_melt <- melt(madracis_clusters_k6)
+madracis_k7_melt <- melt(madracis_clusters_k7)
+madracis_k8_melt_big <- melt(madracis_clusters_k8_big)
+madracis_k8_melt <- melt(madracis_clusters_k8)
+madracis_k9_melt <- melt(madracis_clusters_k9)
 
 # Format DAPC data for ggplot
 # madracis_dapc_k5_melt <- melt(dapc1$posterior)
 # madracis_dapc_k6_melt <- melt(dapc2$posterior)
-# madracis_dapc_k7_melt <- melt(dapc3$posterior)
 
 # Prepare site categories
 species.table$site[which(species.table$site == 'buy')] <- 1 #buoy1
@@ -153,60 +172,66 @@ colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23
 show_col(colors_mpha)
 
 # For STRUCTURE plots
-# colors7 <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", plasma(7))
-# show_col(colors7)
+colors7 <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", plasma(7))
+show_col(colors7)
 
 #### Produce individual plots ####
 njtree <- ggtree(madracis_tree_reroot, layout="rectangular")
+# njtree <- ggtree(madracis_tree_reroot, layout="rectangular", branch.length = 'none')
 
 tree_reroot_names <- get_taxa_name(njtree) # get exact tip order of rerooted tree
 
 species.table <- species.table[match(tree_reroot_names, species.table$sample_full),] # order species table by new exact tip order
+cluster.table <- madracis653_assigns_k8[match(tree_reroot_names, madracis653_assigns_k8$ID),] # order species table by new exact tip order
+cluster.table$max.cluster.num <- gsub("cluster", "", cluster.table$max.cluster)# remove 'cluster' from max.cluster
 
 p1 <- njtree %<+% species.table +
       geom_tiplab(aes(color = factor(species_mpha)), align=TRUE, size=2, linesize=0.5, hjust = -0.05, show.legend = FALSE) + # without 'show.legend = FALSE' random 'a' was in the species legend
       geom_tippoint(aes(color = factor(species_mpha), shape = factor(species_mpha)), align=TRUE, size=2)  +
       scale_color_manual(values = colors_mpha, limits = c('MCAR', 'MDEC','MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm')) + xlim_tree(0.3) # other ways to add more space for long tip labels are 1) scale_x_continuous(expand=expand_scale(0.7)) and 2) xlim_expand(c(0,2)
 
+p2 <- facet_plot(p1, panel= "z.structure k6", data=madracis_k6_melt,
+                 geom=geom_barh, width = 1.0,
+                 mapping = aes(x = value, fill = as.factor(variable)),
+                 stat='identity') +
+                 scale_fill_manual(values = colors7) + theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.5, 'cm')) # for whatever reason, the facet plots are being plotted in alphabetical order regardless of the order they are called in, so need to add letters to get all subsequent facets to plot afterwards and then relabel at the end
 
-
-
-# p2 <- facet_plot(p1, panel= "z.structure k5", data=madracis_k5_melt, 
-#                  geom=geom_barh, width = 1.0,
-#                  mapping = aes(x = value, fill = as.factor(variable)), 
-#                  stat='identity') +
-#                  scale_fill_manual(values = colors7) + theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.5, 'cm')) # for whatever reason, the facet plots are being plotted in alphabetical order regardless of the order they are called in, so need to add letters to get all subsequent facets to plot afterwards and then relabel at the end
-# 
 # # p2.2 <- p2 + facet_set(label = c('Tree'= '1.tree', 'z.structure k5'= '2.structure k5')) # thought I needed this to get the ordering of the facets right, but I don't think I do
 # 
-# p3 <- facet_plot(p2, panel="z.structure k6", data=madracis_k6_melt, 
-#                  geom=geom_barh, width = 1.0,
-#                  mapping = aes(x = value, fill = as.factor(variable)), 
-#                  stat='identity')
-# 
-# p4 <- facet_plot(p3, panel="z.structure k7", data=madracis_k7_melt, 
-#                  geom=geom_barh, width = 1.0,
-#                  mapping = aes(x = value, fill = as.factor(variable)), 
-#                  stat='identity')
-# 
-# #p5 <- facet_plot(p4, panel="zz.dapc k5", data=madracis_dapc_k5_melt, 
-# #                 geom=geom_barh, width = 1.0,
-# #                 mapping = aes(x = value, fill = as.factor(Var2)), 
-# #                 stat='identity')
-# 
-# #p6 <- facet_plot(p5, panel="zz.dapc k6", data=madracis_dapc_k6_melt, 
-# #                 geom=geom_barh, width = 1.0,
-# #                 mapping = aes(x = value, fill = as.factor(Var2)), 
-# #                 stat='identity')
-# 
+p3 <- facet_plot(p2, panel="z.structure k7", data=madracis_k7_melt,
+                 geom=geom_barh, width = 1.0,
+                 mapping = aes(x = value, fill = as.factor(variable)),
+                 stat='identity')
+
+p4 <- facet_plot(p3, panel="z.structure k8", data=madracis_k8_melt,
+                 geom=geom_barh, width = 1.0,
+                 mapping = aes(x = value, fill = as.factor(variable)),
+                 stat='identity')
+
+p5 <- facet_plot(p4, panel="z.structure k8 big", data=madracis_k8_melt_big,
+                 geom=geom_barh, width = 1.0,
+                 mapping = aes(x = value, fill = as.factor(variable)),
+                 stat='identity')
+
+
+p6 <- facet_plot(p5, panel="z.structure k9", data=madracis_k9_melt,
+                 geom=geom_barh, width = 1.0,
+                 mapping = aes(x = value, fill = as.factor(variable)),
+                 stat='identity')
+
+# p6 <- facet_plot(p5, panel="zz.assignment k7", data=madracis_dapc_k7_melt,
+#                 geom=geom_barh, width = 1.0,
+#                 mapping = aes(x = V1, fill = as.factor(V3)),
+#                 stat='identity')
+
 # #p7 <- facet_plot(p6, panel="zz.dapc k7", data=madracis_dapc_k7_melt, 
 # #                 geom=geom_barh, width = 1.0,
 # #                 mapping = aes(x = value, fill = as.factor(Var2)), 
 # #                 stat='identity')
-# 
-# p5 <- facet_plot(p4, panel="zz.reads", data=species.table.merged2,
-#                  geom = geom_point, aes(x = rev(as.numeric(species.table.merged2$read_cat)), color = rep(NA, 87)), shape = 15, size=2, show.legend = F)
-# 
+
+# p6 <- facet_plot(p5, panel="zz.assign k8", data=cluster.table,
+#                  geom = geom_point, aes(x = rev(as.numeric(cluster.table$max.cluster.num)), color = rep(NA, 653)), shape = 15, size=2, show.legend = F)
+
 # p8 <- facet_plot(p5, panel="zzz.site", data=species.table.merged2,
 #                  geom = geom_point, aes(x = rev(as.numeric(species.table.merged2$site)), color = rep(NA, 87)), shape = 15, size=2, show.legend = F) # use dataframe reordered by rerooted tree
 # 
@@ -214,19 +239,46 @@ p1 <- njtree %<+% species.table +
 #            geom = geom_point, aes(x = rev(as.numeric(species.table.merged2$depth)), color = rep(NA,87)),shape = 15, size=2, show.legend = F) # use dataframe reordered by rerooted tree
 # 
 #  
-# p10 <- facet_labeller(p9, label = c('Tree' = 'tree', 'z.structure k5'= 'k5', 'z.structure k6'= 'k6', 'z.structure k7'= 'k7', 'zz.reads' = 'read_cat', 'zzz.site' = 'site', 'zzzz.<10, 11-20, 21-40, 41-60, 60+' = 'depth')) #relabels tree facets once the facets are in the desired order
+p10 <- facet_labeller(p6, label = c('Tree' = 'tree', 'z.structure k6'= 'k6 (12454 snps)', 'z.structure k7'= 'k7 (12454 snps)', 'z.structure k8'= 'k8 (12454 snps)', 'z.structure k8 big'= 'k8 (7588346 snps)', 'z.structure k9'= 'k9 (12454 snps)')) #, 'zz.assign k8' = 'assignment'))
+                                    
+# 'zzz.site' = 'site', 'zzzz.<10, 11-20, 21-40, 41-60, 60+' = 'depth')) #relabels tree facets once the facets are in the desired order
 
 # Change the width of the individual facet_plot panels
 # gt$layout$l[grep('panel-4', gt$layout$name)] # obtain id for panel-4
 gt <- ggplot_gtable(ggplot_build(p10))
-gt$widths[5] <- 0.12*gt$widths[5] #tree
-gt$widths[7] <- 0.04*gt$widths[7]
-gt$widths[9] <- 0.04*gt$widths[9]
-gt$widths[11] <- 0.04*gt$widths[11]
-gt$widths[13] <- 0.03*gt$widths[13] # read count category
-gt$widths[15] <- 0.05*gt$widths[15] # site
-gt$widths[17] <- 0.05*gt$widths[17] # depth
+gt$widths[5] <- 0.15*gt$widths[5] #tree
+gt$widths[7] <- 0.05*gt$widths[7]
+gt$widths[9] <- 0.05*gt$widths[9]
+gt$widths[11] <- 0.05*gt$widths[11]
+gt$widths[13] <- 0.05*gt$widths[13] 
+gt$widths[15] <- 0.05*gt$widths[15]
+
+# gt$widths[15] <- 0.05*gt$widths[15] # site
+# gt$widths[17] <- 0.05*gt$widths[17] # depth
 grid.draw(gt)
 
-ggsave(p1,file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/figures/madracis653_tree.png", width = 20, height = 100, units = "cm")
+ggsave(p10,file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/figures/madracis653_composite.png", width = 50, height = 150, units = "cm", limitsize = FALSE)
+
+
+# Selecting the best K
+#### Load NGSadmixture log files to determine best K ####
+ngsadmix_loglist <- list.files(here("admixture_results/madracis653/logs/"), pattern = ".log", full.names = T)
+
+#use lapply to read in all our log files at once
+loglines <- lapply(1:4, FUN = function(i) readLines(ngsadmix_loglist[i]))
+
+#this will pull out the line that starts with "b" from each file and return it as a list
+foundset <- sapply(1:4, FUN= function(x) loglines[[x]][which(str_sub(loglines[[x]], 1, 1) == 'b')])
+
+as.numeric( sub("\\D*(\\d+).*", "\\1", foundset) ) # this should extract the log likelihood
+
+# store the log likelihoods in a dataframe
+# make a dataframe with an index 6:9, this corresponds to our K values
+logs <- data.frame(K = rep(6:9, each=1)) # 'each' modifies number of replicates for each K
+
+# add to it our likelihood values
+logs$like<-as.vector(as.numeric( sub("\\D*(\\d+).*", "\\1", foundset) ))
+
+# Calculate our delta K and probability
+tapply(logs$like, logs$K, FUN= function(x) mean(abs(x))/sd(abs(x)))
 

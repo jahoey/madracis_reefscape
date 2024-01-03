@@ -113,7 +113,7 @@ species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', '
 
 #### Add labels ####
 # madracis_tree$tip.label <- names4 # when bamlist is used
-madracis_tree$tip.label <- ids$new_ID # when ids area directly read in
+madracis_tree$tip.label <- ids$new_ID # when ids are directly read in
 
 # madracis_clusters_k5 <- cbind(names4, madracis_clusters_k5)
 # madracis_clusters_k6 <- cbind(names4, madracis_clusters_k6)

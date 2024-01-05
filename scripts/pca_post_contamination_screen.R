@@ -19,6 +19,10 @@ add.alpha <- function(col, alpha=1){
           rgb(x[1], x[2], x[3], alpha=alpha))  
 }
 
+##########################################
+#### Initial analysis using 87 corals ####
+##########################################
+
 #### Read in necessary files ####
 #Load the covariance matrix for 87 corals with low, middle and high number of reads
 cov_pcangsd <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd
@@ -186,24 +190,20 @@ p1 <- njtree %<+% species.table2 +
 #### Read in necessary files ####
 #Load the covariance matrix for 87 corals with low, middle and high number of reads
 # angsd_coral653 <- as.matrix(read.table(here("angsd_results/coral653_snps.covMat"), header = F)) # This is the covariance matrix created by angsd
-pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd
+# pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default
+pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.01 
 
-# Load bam names to assign species
-bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list_653.txt"), header = FALSE, sep = '\t', col.names = c('path'))
+# Load id names to assign metadata
+ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE)
 
-# Split file paths to extract metadata
-names <- str_split_fixed(bam_paths$path, '.dedup.overlapclipped.bam', 2) # Get rid of suffix
-names2 <- str_split_fixed(names[,1], '/', 8)
-names3 <- sub('_tech_', '_', names2[,8]) # remove 'tech' prefix of technical replicates so that str_split_fixed will work well
-metadata <- str_split_fixed(names3, '_', 7)
+metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
+colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
 
-species <- metadata[,2]
-site <- metadata[,3]
-depth <- as.numeric(metadata[,4]) # Must be numeric or the subsetting gets very weird
-id_original <- paste(metadata[,5], metadata[,6], sep = "_")
-extract <- metadata[,7]
-
-names4 <- paste(species, site, depth, id_original, extract, sep = "_")
+species <- metadata[,1]
+site <- metadata[,2]
+depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
+id_original <- paste(metadata[,4], metadata[,5], sep = "_")
+extract <- metadata[,6]
 
 # Split out MPHA by depth
 species_mpha <- species
@@ -275,7 +275,7 @@ plot(pca)
 ####################################################################################################################################################
 #### Base plot for pcangsd covariance matrix ####
 # By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd.png", width=9, height=9, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01.png", width=9, height=9, res=300, units="in")
 
 par(
   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
@@ -289,8 +289,8 @@ par(
 plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.1, 0.025), ylim = c(-0.1,0.05), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
 axis(1, at=seq(-0.1,0.025, by=0.01), labels=seq(-0.1,0.025, by= 0.01), line = -1)
 axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
-mtext("PC1 (31.40%)", side = 1, line = 1.5)
-mtext("PC2 (5.87%)", side = 2, line = 1)
+mtext("PC1 (20.86%)", side = 1, line = 1.5) # modify variance explained to match dataset
+mtext("PC2 (4.32%)", side = 2, line = 1) # modify variance explained to match dataset
 
 legend(-0.09,-0.04, 
        legend = levels(factor(data_count$species_mpha)),
@@ -301,9 +301,13 @@ legend(-0.09,-0.04,
 dev.off()
 
 # PC1-PC10
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01_pcs1-10.png", width=14, height=9, res=300, units="in")
+
 plot(pca.vectors[,2:11], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
 
-#### Tree ####
+dev.off()
+
+#### Tree (exploratory) ####
 ## heatmap / clustering / trees from angsd wiki
 m <- as.matrix(read.table(here("angsd_results/coral653_snps.ibsMat"), header = FALSE))
 
@@ -321,8 +325,10 @@ plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", depth, sep 
 # plot(hclust(madracis_tree, "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
 
 # create tree from distance matrix
-m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.tree.cov"), header = FALSE))
-heatmap(m)
+m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree.cov"), header = FALSE))
+colnames(m) <- ids$new_ID
+rownames(m) <- ids$new_ID
+heatmap(m, cexRow = 0.07, cexCol = 0.07)
 
 #neighbour joining
 plot(ape::nj(m))
@@ -330,9 +336,10 @@ pdf(file = "~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/t
 plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", site, "_", depth, sep = ''), cex = 0.5)
 dev.off()
 
-madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat.tree"))
+# from pcangsd tree file
+madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree"))
 tip.order <- as.numeric(madracis_tree3$tip.label)
 
-names4.ordered <- names4[tip.order]
+names4.ordered <- ids$new_ID[tip.order]
 madracis_tree3$tip.label <- names4.ordered
 plot(madracis_tree3)

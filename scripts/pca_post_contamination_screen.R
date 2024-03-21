@@ -8,6 +8,8 @@ library(RColorBrewer)
 library(scales)
 library(ape)
 library(ggtree)
+library(MASS)
+library(adegenet)
 
 add.alpha <- function(col, alpha=1){
   if(missing(col))
@@ -21,224 +23,217 @@ add.alpha <- function(col, alpha=1){
 #### Initial analysis using 87 corals ####
 ##########################################
 
-#### Read in necessary files ####
-#Load the covariance matrix for 87 corals with low, middle and high number of reads
-cov_pcangsd <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd
-
-# Load bam names to assign species
-bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list.txt"), header = FALSE, sep = '\t', col.names = c('path'))
-
-# Split file paths to extract metadata
-names <- str_split_fixed(bam_paths$path, '.dedup.overlapclipped.bam', 2) # Get rid of suffix
-names2 <- str_split_fixed(names[,1], '/', 8)
-names3 <- sub('_tech_', '_', names2[,8]) # remove 'tech' prefix of technical replicates so that str_split_fixed will work well
-metadata <- str_split_fixed(names3, '_', 7)
-
-species <- metadata[,2]
-site <- metadata[,3]
-depth <- as.numeric(metadata[,4]) # Must be numeric or the subsetting gets very weird
-id_original <- paste(metadata[,5], metadata[,6], sep = "_")
-extract <- metadata[,7]
-
-names4 <- paste(species, site, depth, id_original, extract, sep = "_")
-
-# Split out MPHA by depth
-species_mpha <- species
-species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
-species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
-species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
-
-species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) #reorder the species factors
-
-# Combine back into a dataframe
-data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
-
-# Import 'low', 'medium' and 'high' categories for plotting
-# read_cat <- read.table(here("angsd_results/input/madracis90.full.txt"), header = F, sep = '\t')
-
-# Set color scheme
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "#2664d8", "gray70") # new colors
-show_col(colors_mpha)
-
-# This is covariance matrix created by pcangsd
-madracis.pca <- eigen(cov_pcangsd) #perform the pca using the eigen function. 
-
-eigenvectors <- madracis.pca$vectors #extract eigenvectors 
-pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
-
-# Calculate variance explained by each axis
-pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
-
-varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
-varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
-varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
-varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
-
-eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
-eig_percent[1:10]
-
-# Quick ggplot
-pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
-plot(pca)
-
-#### Base plot for pcangsd covariance matrix
-# By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis87_coralpca_pcangsd.png", width=8, height=8, res=300, units="in")
-
-par(
-  mar=c(4, 3, 3, 1), # panel margin size in "line number" units
-  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
-  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
-  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
-  bty = 'n'
-)
-
-plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.05, 0.25), ylim = c(-0.25,0.1), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
-axis(1, at=seq(-0.05,0.25, by=0.05), labels=seq(-0.05,0.25, by= 0.05), line = 0)
-axis(2, at=seq(-0.25,0.1, by = 0.1), labels=seq(-0.25,0.1, by= 0.1), line = -3, las = 2)
-mtext("PC1 (36.25%)", side = 1, line = 2.5)
-mtext("PC2 (6.31%)", side = 2, line = 1)
-
-legend(0.15,-0.1, 
-       legend = levels(factor(data_count$species_mpha)),
-       pch = 19,
-       col = add.alpha(colors_mpha, 0.7),
-       cex = 0.9)
-
-dev.off()
-
-# PC1-PC5
-plot(pca.vectors[,2:6], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
-
-#### Tree ####
-## heatmap / clustering / trees from angsd wiki
-m <- as.matrix(read.table(here("angsd_results/madracis87_coral_snps.ibsMat"), header = FALSE))
-
-#heat map
-heatmap(m)
-
-#neighbour joining
-plot(ape::nj(m))
-plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
-
-## Using pcangsd tree method ##
-# tree file
-# madracis_tree <- ape::read.tree(here("angsd_results/PCAngsd_madracis87_covmat.tree"))
-# plot(madracis_tree, main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
-# plot(hclust(madracis_tree, "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
-
-# create tree from distance matrix
-m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.tree.cov"), header = FALSE))
-heatmap(m)
-
-#neighbour joining
-plot(ape::nj(m))
-plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", site, "_", depth, sep = ''), cex = 0.6)
-
-
-##########################################
-madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis87_covmat.tree"))
-tip.order <- as.numeric(madracis_tree3$tip.label)
-
-names4.ordered <- names4[tip.order]
-madracis_tree3$tip.label <- names4.ordered
-plot(madracis_tree3)
-
-m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.tree.cov"), header = FALSE)) # distribution of edge lengths is really weird
-madracis_tree <- nj(m)
-madracis_tree$tip.label <- names4
-
-# Reroot M. senaria
-is.rooted (madracis_tree3)
-outgroup <- c("MSEN_est_10_JH_0392_E0490", "MSEN_kal_10_JH_0555_E0295", "MSEN_kal_20_JH_0240_E0193", "MSEN_sea_10_JH_0530_E0384", "MSEN_sna_10_JH_0030_E0461", "MSEN_sna_10_JH_0590_E0053", "MSEN_wat_20_JH_0607_E0368", "MSEN_wat_20_JH_0622_E0303", "SINT_sna_20_JH_0013_E0713", "MDEC_kal_10_JH_0089_E0485",
-              "MPHA_kal_10_JH_0176_E0284", "MPHA_est_10_JH_0383_E0679",
-              "MPHA_est_5_JH_0344_E0608", "MPHA_est_10_JH_0503_E0133",
-              "MPHA_est_20_JH_0332_E0083","UNKN_est_40_JH_0431_E0168",
-              "UNKN_est_10_JH_0314_E0547") # UNKN_est_60_JH_0304_E0593 is new from first iteration
-madracis_tree_reroot <- root(madracis_tree3, outgroup, resolve.root = TRUE)
-# madracis_tree_reroot <- root(madracis_tree, outgroup, interactive = TRUE, resolve.root = TRUE)
-is.rooted(madracis_tree_reroot)
-
-tree_reroot_names <- get_taxa_name(madracis_tree)
-
-njtree <- ggtree(madracis_tree_reroot, layout="rectangular")
-
-tree_reroot_names <- get_taxa_name(njtree) # get exact tip order of rerooted tree
-
-species.table2 <- species.table[match(tree_reroot_names, species.table$sample_full),] # order species table by new exact tip order
-
-p1 <- njtree %<+% species.table2 +
-  geom_tiplab(aes(color = factor(species_mpha)), align=TRUE, size=2, linesize=0.5, hjust = -0.05, show.legend = FALSE) + # without 'show.legend = FALSE' random 'a' was in the species legend
-  geom_tippoint(aes(color = factor(species_mpha), shape = factor(species_mpha)), align=TRUE, size=2)  +
-  scale_color_manual(values = colors_mpha, limits = c('MCAR', 'MDEC','MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm')) + xlim_tree(0.3) # other ways to add more space for long tip labels are 1) scale_x_continuous(expand=expand_scale(0.7)) and 2) xlim_expand(c(0,2)
-
-
-
-
-
-
-
+# #### Read in necessary files ####
+# #Load the covariance matrix for 87 corals with low, middle and high number of reads
+# cov_pcangsd <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd
+# 
+# # Load bam names to assign species
+# bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list.txt"), header = FALSE, sep = '\t', col.names = c('path'))
+# 
+# # Split file paths to extract metadata
+# names <- str_split_fixed(bam_paths$path, '.dedup.overlapclipped.bam', 2) # Get rid of suffix
+# names2 <- str_split_fixed(names[,1], '/', 8)
+# names3 <- sub('_tech_', '_', names2[,8]) # remove 'tech' prefix of technical replicates so that str_split_fixed will work well
+# metadata <- str_split_fixed(names3, '_', 7)
+# 
+# species <- metadata[,2]
+# site <- metadata[,3]
+# depth <- as.numeric(metadata[,4]) # Must be numeric or the subsetting gets very weird
+# id_original <- paste(metadata[,5], metadata[,6], sep = "_")
+# extract <- metadata[,7]
+# 
+# names4 <- paste(species, site, depth, id_original, extract, sep = "_")
+# 
+# # Split out MPHA by depth
+# species_mpha <- species
+# species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
+# species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
+# species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
+# 
+# species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) #reorder the species factors
+# 
+# # Combine back into a dataframe
+# data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
+# 
+# # Import 'low', 'medium' and 'high' categories for plotting
+# # read_cat <- read.table(here("angsd_results/input/madracis90.full.txt"), header = F, sep = '\t')
+# 
+# # Set color scheme
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "#2664d8", "gray70") # new colors
+# show_col(colors_mpha)
+# 
+# # This is covariance matrix created by pcangsd
+# madracis.pca <- eigen(cov_pcangsd) #perform the pca using the eigen function. 
+# 
+# eigenvectors <- madracis.pca$vectors #extract eigenvectors 
+# pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
+# 
+# # Calculate variance explained by each axis
+# pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
+# 
+# varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
+# varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
+# varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
+# varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
+# 
+# eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
+# eig_percent[1:10]
+# 
+# # Quick ggplot
+# pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
+# plot(pca)
+# 
+# #### Base plot for pcangsd covariance matrix
+# # By species, PC1 vs PC2
+# png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis87_coralpca_pcangsd.png", width=8, height=8, res=300, units="in")
+# 
+# par(
+#   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
+#   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+#   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+#   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+#   ps=14, # point size, which is the font size
+#   bty = 'n'
+# )
+# 
+# plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.05, 0.25), ylim = c(-0.25,0.1), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
+# axis(1, at=seq(-0.05,0.25, by=0.05), labels=seq(-0.05,0.25, by= 0.05), line = 0)
+# axis(2, at=seq(-0.25,0.1, by = 0.1), labels=seq(-0.25,0.1, by= 0.1), line = -3, las = 2)
+# mtext("PC1 (36.25%)", side = 1, line = 2.5)
+# mtext("PC2 (6.31%)", side = 2, line = 1)
+# 
+# legend(0.15,-0.1, 
+#        legend = levels(factor(data_count$species_mpha)),
+#        pch = 19,
+#        col = add.alpha(colors_mpha, 0.7),
+#        cex = 0.9)
+# 
+# dev.off()
+# 
+# # PC1-PC5
+# plot(pca.vectors[,2:6], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
+# 
+# #### Tree ####
+# ## heatmap / clustering / trees from angsd wiki
+# m <- as.matrix(read.table(here("angsd_results/madracis87_coral_snps.ibsMat"), header = FALSE))
+# 
+# #heat map
+# heatmap(m)
+# 
+# #neighbour joining
+# plot(ape::nj(m))
+# plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
+# 
+# ## Using pcangsd tree method ##
+# # tree file
+# # madracis_tree <- ape::read.tree(here("angsd_results/PCAngsd_madracis87_covmat.tree"))
+# # plot(madracis_tree, main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
+# # plot(hclust(madracis_tree, "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
+# 
+# # create tree from distance matrix
+# m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.tree.cov"), header = FALSE))
+# heatmap(m)
+# 
+# #neighbour joining
+# plot(ape::nj(m))
+# plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", site, "_", depth, sep = ''), cex = 0.6)
+# 
+# 
+# ##########################################
+# madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis87_covmat.tree"))
+# tip.order <- as.numeric(madracis_tree3$tip.label)
+# 
+# names4.ordered <- names4[tip.order]
+# madracis_tree3$tip.label <- names4.ordered
+# plot(madracis_tree3)
+# 
+# m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis87_covmat.tree.cov"), header = FALSE)) # distribution of edge lengths is really weird
+# madracis_tree <- nj(m)
+# madracis_tree$tip.label <- names4
+# 
+# # Reroot M. senaria
+# is.rooted (madracis_tree3)
+# outgroup <- c("MSEN_est_10_JH_0392_E0490", "MSEN_kal_10_JH_0555_E0295", "MSEN_kal_20_JH_0240_E0193", "MSEN_sea_10_JH_0530_E0384", "MSEN_sna_10_JH_0030_E0461", "MSEN_sna_10_JH_0590_E0053", "MSEN_wat_20_JH_0607_E0368", "MSEN_wat_20_JH_0622_E0303", "SINT_sna_20_JH_0013_E0713", "MDEC_kal_10_JH_0089_E0485",
+#               "MPHA_kal_10_JH_0176_E0284", "MPHA_est_10_JH_0383_E0679",
+#               "MPHA_est_5_JH_0344_E0608", "MPHA_est_10_JH_0503_E0133",
+#               "MPHA_est_20_JH_0332_E0083","UNKN_est_40_JH_0431_E0168",
+#               "UNKN_est_10_JH_0314_E0547") # UNKN_est_60_JH_0304_E0593 is new from first iteration
+# madracis_tree_reroot <- root(madracis_tree3, outgroup, resolve.root = TRUE)
+# # madracis_tree_reroot <- root(madracis_tree, outgroup, interactive = TRUE, resolve.root = TRUE)
+# is.rooted(madracis_tree_reroot)
+# 
+# tree_reroot_names <- get_taxa_name(madracis_tree)
+# 
+# njtree <- ggtree(madracis_tree_reroot, layout="rectangular")
+# 
+# tree_reroot_names <- get_taxa_name(njtree) # get exact tip order of rerooted tree
+# 
+# species.table2 <- species.table[match(tree_reroot_names, species.table$sample_full),] # order species table by new exact tip order
+# 
+# p1 <- njtree %<+% species.table2 +
+#   geom_tiplab(aes(color = factor(species_mpha)), align=TRUE, size=2, linesize=0.5, hjust = -0.05, show.legend = FALSE) + # without 'show.legend = FALSE' random 'a' was in the species legend
+#   geom_tippoint(aes(color = factor(species_mpha), shape = factor(species_mpha)), align=TRUE, size=2)  +
+#   scale_color_manual(values = colors_mpha, limits = c('MCAR', 'MDEC','MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm')) + xlim_tree(0.3) # other ways to add more space for long tip labels are 1) scale_x_continuous(expand=expand_scale(0.7)) and 2) xlim_expand(c(0,2)
 
 
 #####################################
 #### Full analysis of 653 corals ####
 #####################################
 
-#### Read in necessary files ####
-#Load the covariance matrix for 87 corals with low, middle and high number of reads
-# angsd_coral653 <- as.matrix(read.table(here("angsd_results/coral653_snps.covMat"), header = F)) # This is the covariance matrix created by angsd
-# pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default
-pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.01 
-
-# Load id names to assign metadata
-ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE)
-
-metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
-colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
-
-species <- metadata[,1]
-site <- metadata[,2]
-depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
-id_original <- paste(metadata[,4], metadata[,5], sep = "_")
-extract <- metadata[,6]
-
-# Split out MPHA by depth
-species_mpha <- species
-species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
-species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
-species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
-
-species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) #reorder the species factors
-
-# Combine back into a dataframe
-data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
-
-# Set color scheme
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "#2664d8", "gray70") # new colors
-show_col(colors_mpha)
-
-# Decide which covariance matrix to use 
-# madracis.pca <- eigen(angsd_coral653) #perform the pca using the eigen function. This is the angsd covariance matrix
-madracis.pca <- eigen(pcangsd_coral653)# this is the pcangsd covariance matrix
-
-eigenvectors <- madracis.pca$vectors #extract eigenvectors 
-pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
-
-# Calculate variance explained by each axis
-pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
-
-varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
-varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
-varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
-varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
-
-eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
-eig_percent[1:10]
-
-# Quick ggplot
-pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
-plot(pca)
+# #### Read in necessary files ####
+# #Load the covariance matrix for 87 corals with low, middle and high number of reads
+# # angsd_coral653 <- as.matrix(read.table(here("angsd_results/coral653_snps.covMat"), header = F)) # This is the covariance matrix created by angsd
+# # pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default
+# pcangsd_coral653 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.01 
+# 
+# # Load id names to assign metadata
+# ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE)
+# 
+# metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
+# colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
+# 
+# species <- metadata[,1]
+# site <- metadata[,2]
+# depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
+# id_original <- paste(metadata[,4], metadata[,5], sep = "_")
+# extract <- metadata[,6]
+# 
+# # Split out MPHA by depth
+# species_mpha <- species
+# species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
+# species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
+# species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
+# 
+# species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'SINT', 'UNKN')) #reorder the species factors
+# 
+# # Combine back into a dataframe
+# data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
+# 
+# # Set color scheme
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "#2664d8", "gray70") # new colors
+# show_col(colors_mpha)
+# 
+# # Decide which covariance matrix to use 
+# # madracis.pca <- eigen(angsd_coral653) #perform the pca using the eigen function. This is the angsd covariance matrix
+# madracis.pca <- eigen(pcangsd_coral653)# this is the pcangsd covariance matrix
+# 
+# eigenvectors <- madracis.pca$vectors #extract eigenvectors 
+# pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
+# 
+# # Calculate variance explained by each axis
+# pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
+# 
+# varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
+# varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
+# varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
+# varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
+# 
+# eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
+# eig_percent[1:10]
+# 
+# # Quick ggplot
+# pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
+# plot(pca)
 
 #### Base plot for angsd covariance matrix ####
 # By species, PC1 vs PC2
@@ -272,76 +267,76 @@ plot(pca)
 
 ####################################################################################################################################################
 #### Base plot for pcangsd covariance matrix ####
-# By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01.png", width=9, height=9, res=300, units="in")
-
-par(
-  mar=c(4, 3, 3, 1), # panel margin size in "line number" units
-  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
-  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
-  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
-  bty = 'n'
-)
-
-plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.1, 0.025), ylim = c(-0.1,0.05), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
-axis(1, at=seq(-0.1,0.025, by=0.01), labels=seq(-0.1,0.025, by= 0.01), line = -1)
-axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
-mtext("PC1 (20.86%)", side = 1, line = 1.5) # modify variance explained to match dataset
-mtext("PC2 (4.32%)", side = 2, line = 1) # modify variance explained to match dataset
-
-legend(-0.09,-0.04, 
-       legend = levels(factor(data_count$species_mpha)),
-       pch = 19,
-       col = add.alpha(colors_mpha, 0.7),
-       cex = 1)
-
-dev.off()
-
-# PC1-PC10
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01_pcs1-10.png", width=14, height=9, res=300, units="in")
-
-plot(pca.vectors[,2:11], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
-
-dev.off()
-
-#### Tree (exploratory) ####
-## heatmap / clustering / trees from angsd wiki
-m <- as.matrix(read.table(here("angsd_results/coral653_snps.ibsMat"), header = FALSE))
-
-#heat map
-heatmap(m)
-
-#neighbour joining
-plot(ape::nj(m))
-plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.3)
-
-## Using pcangsd tree method ##
-# tree file
-madracis_tree <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree"))
-plot(madracis_tree, main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
-plot(hclust(madracis_tree, "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
-
-# create tree from distance matrix
-m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree.cov"), header = FALSE))
-colnames(m) <- ids$new_ID
-rownames(m) <- ids$new_ID
-heatmap(m, cexRow = 0.07, cexCol = 0.07)
-
-#neighbour joining
-plot(ape::nj(m))
-pdf(file = "~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/tree653_angsd_cov.pdf", width = 50, height = 8)
-plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", site, "_", depth, sep = ''), cex = 0.5)
-dev.off()
-
-# from pcangsd tree file
-madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree"))
-tip.order <- as.numeric(madracis_tree3$tip.label)
-
-names4.ordered <- ids$new_ID[tip.order]
-madracis_tree3$tip.label <- names4.ordered
-plot(madracis_tree3)
-
+# # By species, PC1 vs PC2
+# png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01.png", width=9, height=9, res=300, units="in")
+# 
+# par(
+#   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
+#   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+#   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+#   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+#   ps=14, # point size, which is the font size
+#   bty = 'n'
+# )
+# 
+# plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.1, 0.025), ylim = c(-0.1,0.05), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
+# axis(1, at=seq(-0.1,0.025, by=0.01), labels=seq(-0.1,0.025, by= 0.01), line = -1)
+# axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
+# mtext("PC1 (20.86%)", side = 1, line = 1.5) # modify variance explained to match dataset
+# mtext("PC2 (4.32%)", side = 2, line = 1) # modify variance explained to match dataset
+# 
+# legend(-0.09,-0.04, 
+#        legend = levels(factor(data_count$species_mpha)),
+#        pch = 19,
+#        col = add.alpha(colors_mpha, 0.7),
+#        cex = 1)
+# 
+# dev.off()
+# 
+# # PC1-PC10
+# png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis653_coralpca_pcangsd_0.01_pcs1-10.png", width=14, height=9, res=300, units="in")
+# 
+# plot(pca.vectors[,2:11], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
+# 
+# dev.off()
+# 
+# #### Tree (exploratory) ####
+# ## heatmap / clustering / trees from angsd wiki
+# m <- as.matrix(read.table(here("angsd_results/coral653_snps.ibsMat"), header = FALSE))
+# 
+# #heat map
+# heatmap(m)
+# 
+# #neighbour joining
+# plot(ape::nj(m))
+# plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.3)
+# 
+# ## Using pcangsd tree method ##
+# # tree file
+# madracis_tree <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree"))
+# plot(madracis_tree, main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
+# plot(hclust(madracis_tree, "ave"), main = "", labels = paste(species, "_", depth, sep = ''), cex = 0.6)
+# 
+# # create tree from distance matrix
+# m <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree.cov"), header = FALSE))
+# colnames(m) <- ids$new_ID
+# rownames(m) <- ids$new_ID
+# heatmap(m, cexRow = 0.07, cexCol = 0.07)
+# 
+# #neighbour joining
+# plot(ape::nj(m))
+# pdf(file = "~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/tree653_angsd_cov.pdf", width = 50, height = 8)
+# plot(hclust(dist(m), "ave"), main = "", labels = paste(species, "_", site, "_", depth, sep = ''), cex = 0.5)
+# dev.off()
+# 
+# # from pcangsd tree file
+# madracis_tree3 <- ape::read.tree(here("angsd_results/PCAngsd_madracis653_covmat_0.01.tree"))
+# tip.order <- as.numeric(madracis_tree3$tip.label)
+# 
+# names4.ordered <- ids$new_ID[tip.order]
+# madracis_tree3$tip.label <- names4.ordered
+# plot(madracis_tree3)
+# 
 
 #####################################################
 #### Full analysis of 650 corals, 3 SINT removed ####
@@ -447,91 +442,166 @@ plot(hclust(dist(pcangsd_coral650), "ave"), main = "", labels = paste(species, "
 ################################
 #### Read in subset dataset ####
 
-#Load the pcangsdcovariance matrix
-pcangsd_coral650_sub <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis650_90k_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default, ~25K loci, subset by angsd
-pcangsd_coral650_sub2 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis650_90k_try2_covmat.cov"), header = F)) #subset by hand, rather than angsd
+# #Load the pcangsdcovariance matrix
+# pcangsd_coral650_sub <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis650_90k_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default, ~25K loci, subset by angsd
+# pcangsd_coral650_sub2 <- as.matrix(read.table(here("angsd_results/PCAngsd_madracis650_90k_try2_covmat.cov"), header = F)) #subset by hand, rather than angsd
+# 
+# # Load id names to assign metadata
+# ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE) # This is 653 colonies
+# ids2<- ids[-c(626,633,648),] #remove the 3 SINT colonies
+# 
+# metadata <- as.data.frame(str_split_fixed(ids2$new_ID, '_', 6))
+# colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
+# 
+# species <- metadata[,1]
+# site <- metadata[,2]
+# depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
+# id_original <- paste(metadata[,4], metadata[,5], sep = "_")
+# extract <- metadata[,6]
+# 
+# # Split out MPHA by depth
+# species_mpha <- species
+# species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
+# species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
+# species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
+# 
+# species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN')) #reorder the species factors
+# 
+# # Combine back into a dataframe
+# data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
+# 
+# # Set color scheme
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "gray70") # new colors, "#2664d8"
+# show_col(colors_mpha)
+# 
+# # Decide which covariance matrix to use 
+# madracis.pca <- eigen(pcangsd_coral650_sub) # this is the pcangsd covariance matrix
+# 
+# eigenvectors <- madracis.pca$vectors #extract eigenvectors 
+# pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
+# 
+# # Calculate variance explained by each axis
+# pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
+# 
+# varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
+# varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
+# varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
+# varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
+# 
+# eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
+# eig_percent[1:10]
+# 
+# # Quick ggplot
+# pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
+# plot(pca)
+# 
+# ####################################################################################################################################################
+# #### Base plot for pcangsd covariance matrix ####
+# # By species, PC1 vs PC2
+# png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_coralpca_25k_pcangsd.png", width=9, height=9, res=300, units="in")
+# 
+# par(
+#   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
+#   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+#   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+#   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+#   ps=14, # point size, which is the font size
+#   bty = 'n'
+# )
+# 
+# plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.1, 0.025), ylim = c(-0.1,0.05), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
+# axis(1, at=seq(-0.1,0.025, by=0.01), labels=seq(-0.1,0.025, by= 0.01), line = -1)
+# axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
+# mtext("PC1 (15.15%)", side = 1, line = 1.5) # modify variance explained to match dataset
+# mtext("PC2 (3.54%)", side = 2, line = 1) # modify variance explained to match dataset
+# 
+# legend(-0.09,-0.04, 
+#        legend = levels(factor(data_count$species_mpha)),
+#        pch = 19,
+#        col = add.alpha(colors_mpha, 0.7),
+#        cex = 1)
+# 
+# dev.off()
+# 
+# # PC1-PC10
+# png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_coralpca_25k_pcangsd_pcs1-10.png", width=14, height=9, res=300, units="in")
+# 
+# plot(pca.vectors[,2:11], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
+# 
+# dev.off()
 
-# Load id names to assign metadata
-ids <- read.csv(here("angsd_results/bam_lists/ids_recoded.csv"), header = TRUE) # This is 653 colonies
-ids2<- ids[-c(626,633,648),] #remove the 3 SINT colonies
+#### DAPC for 650 Madracis ####
+# Prepare dataframe for DAPC
+mad650_dapc_data <- cbind(ids2$new_ID, species_mpha, data.frame(madracis.pca$vectors))
+colnames(mad650_dapc_data)[3:(dim(mad650_dapc_data)[2])] <- paste0("PC",1:(dim(mad650_dapc_data)[2]-2))
+colnames(mad650_dapc_data)[1:2] <- c("individual", "population")
 
-metadata <- as.data.frame(str_split_fixed(ids2$new_ID, '_', 6))
-colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
+# Evaluate number of PCs to retain
+plot(cumsum(eig_percent)[1:15], type = 'b')
+plot(1:15, madracis.pca$values[1:15], xlab = 'principal component', ylab = 'eigenvalue') #screeplot
 
-species <- metadata[,1]
-site <- metadata[,2]
-depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
-id_original <- paste(metadata[,4], metadata[,5], sep = "_")
-extract <- metadata[,6]
+n <- 6 # the number of principal components to use for discriminant analysis
 
-# Split out MPHA by depth
-species_mpha <- species
-species_mpha[which(species == 'MPHA' & depth <=20)] <- "MPHA-shallow" # MPHA at depths of 20m or shallower
-species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
-species_mpha[which(species == 'MPHA' & depth >60)] <- "MPHA-very deep" # MPHA at depths >60
+#### Do PCA-LDA ####
+set.seed(175)
+train.index <- sample(c(1:650), 449, replace=FALSE) #455/650 = 70%
+train.index <- c(train.index,8, 125, 127, 128, 561, 564) # There are only two MCAR, so put 1 in training dataset; 5 UNKN so put 2 in training; 6 MFOR so put 3 in training
 
-species_mpha <- factor(species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN')) #reorder the species factors
+# Split into training-test datasets
+train <- mad650_dapc_data[train.index,]
+test <- mad650_dapc_data[-train.index,]
 
-# Combine back into a dataframe
-data_count <- cbind.data.frame(species, species_mpha, site, depth, id_original, extract)
+# Use 6 PCs to fit training data & then use that to predict the test datasets. Finally get training coordinates
+pc6.fit <- lda(population ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6, data=train, na.action="na.omit", CV=F) # needed for predict step
+pc6.pred <- predict(object = pc6.fit, newdata = test)
 
-# Set color scheme
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "gray70") # new colors, "#2664d8"
-show_col(colors_mpha)
+pc6.train <- predict(object = pc6.fit, newdata = train)
 
-# Decide which covariance matrix to use 
-madracis.pca <- eigen(pcangsd_coral650_sub) # this is the pcangsd covariance matrix
+# Extract eigenvalues (similar to PCA)
+eigenvalues_lda <- pc6.fit$svd^2
 
-eigenvectors <- madracis.pca$vectors #extract eigenvectors 
-pca.vectors <- as_tibble(cbind(data_count$species_mpha, data.frame(eigenvectors))) #combine with our fine-scale MPHA species identities
+# Calculate the proportion of variance explained by each linear discriminant
+variance_explained_lda <- eigenvalues_lda / sum(eigenvalues_lda)
 
-# Calculate variance explained by each axis
-pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
+# Assess accuracy of the prediction
+# percent correct for each species
+table(pc6.pred$class, test$population) # correct assignment rate of test dataset (rows are 1st entry, columns are 2nd)
+ct1 <- table(pc6.pred$class, test$population)
+diag(prop.table(ct1,1))
 
-varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
-varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
-varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
-varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
+# total percent correct
+sum(diag(prop.table(ct1)))
 
-eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
-eig_percent[1:10]
+# Assess accuracy of entire training-test dataset
+all.class <- as.factor(append(as.character(pc6.pred$class), as.character(pc6.train$class)))
+all.class.ordered <- factor(all.class, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN'))
+all.pop <- as.factor(append(as.character(test$population), as.character(train$population)))
+all.pop.ordered <- factor(all.pop, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN'))
 
-# Quick ggplot
-pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = data_count$species_mpha)) + geom_point()
-plot(pca)
+ct2 <- table(all.class.ordered, all.pop.ordered)# correct assignment rate of training-test dataset
+diag(prop.table(ct2,1))
+sum(diag(prop.table(ct2)))
 
-####################################################################################################################################################
-#### Base plot for pcangsd covariance matrix ####
-# By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_coralpca_25k_pcangsd.png", width=9, height=9, res=300, units="in")
+#### Plot LDA ####
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_dapc.png", width=10, height=9, res=300, units="in")
 
 par(
-  mar=c(4, 3, 3, 1), # panel margin size in "line number" units
+  mar=c(4, 4, 3, 1), # panel margin size in "line number" units
   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14, # point size, which is the font size
-  bty = 'n'
+  par(mfrow = c(2,2))
 )
 
-plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), xlim = c(-0.1, 0.025), ylim = c(-0.1,0.05), pch = 16, xaxt = 'n', xlab = '', ylab = '', yaxt = 'n', frame.plot = F)
-axis(1, at=seq(-0.1,0.025, by=0.01), labels=seq(-0.1,0.025, by= 0.01), line = -1)
-axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
-mtext("PC1 (15.15%)", side = 1, line = 1.5) # modify variance explained to match dataset
-mtext("PC2 (3.54%)", side = 2, line = 1) # modify variance explained to match dataset
+plot(pc6.pred$x[,"LD1"], pc6.pred$x[,"LD2"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (77.3%)', ylab = 'LD2 (16.6%)', xlim = c(-100,10), ylim = c(-25,33))
+points(pc6.train$x[,"LD1"], pc6.train$x[,"LD2"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-legend(-0.09,-0.04, 
-       legend = levels(factor(data_count$species_mpha)),
-       pch = 19,
-       col = add.alpha(colors_mpha, 0.7),
-       cex = 1)
+plot(pc6.pred$x[,"LD2"], pc6.pred$x[,"LD3"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (16.6%)', ylab = 'LD3 (4.1%)', xlim = c(-22,32), ylim = c(-4,7))
+points(pc6.train$x[,"LD2"], pc6.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-dev.off()
-
-# PC1-PC10
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_coralpca_25k_pcangsd_pcs1-10.png", width=14, height=9, res=300, units="in")
-
-plot(pca.vectors[,2:11], col = alpha(colors_mpha[factor(data_count$species_mpha)], 0.7), pch = 16, lower.panel = NULL)
+plot(pc6.pred$x[,"LD1"], pc6.pred$x[,"LD3"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (77.3%)', ylab = 'LD3 (4.1%)', xlim = c(-100,20), ylim = c(-4,7))
+points(pc6.train$x[,"LD1"], pc6.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
 dev.off()
 

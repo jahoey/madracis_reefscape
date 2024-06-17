@@ -128,3 +128,13 @@ filtered_clones <- potential.clones.unique %>%
 # Display the filtered dataframe
 filtered_clones
 
+#### Generate a file with recoded species identities for 610 Madracis: ids_recoded610.csv ####
+# Load IDs file to assign species
+ids <- read.csv(here("angsd_results/bam_lists/ids_recoded672.csv"), header = TRUE) # 672 colonies
+Madracis610 <- read.csv(here("angsd_results/bam_lists/madracis610_names.csv"), header = TRUE)
+ 
+# Subset ids_recoded672.csv to 610 Madracis
+ids610 <- ids[match(Madracis610$original_ID, ids$original_ID),] #subsets the ids object to those in the Madracis610 file, in that exact order
+
+write.csv(ids610, here("angsd_results/bam_lists/ids_recoded610.csv"), quote = FALSE, row.names = FALSE)
+

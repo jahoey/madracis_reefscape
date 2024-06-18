@@ -20,8 +20,11 @@ add.alpha <- function(col, alpha=1){
           rgb(x[1], x[2], x[3], alpha=alpha))  
 }
 
+##########################################################################
+#### Visualize cluster dendrogram for 672 Madracis to identify clones ####
+##########################################################################
 #### Read in data ####
-m <- as.matrix(read.table(here("angsd_results/madracis672/all_snps.ibsMat"), header = FALSE)) # 28M SNPs after mapping to 14 somatic chromosomes & mt chromosome
+m <- as.matrix(read.table(here("angsd_results/madracis672/all_snps.ibsMat"), header = FALSE)) # 26M SNPs after mapping to 14 somatic chromosomes & mt chromosome
 
 # Load IDs file to assign species
 ids <- read.csv(here("angsd_results/bam_lists/ids_recoded672.csv"), header = TRUE) # 672 colonies
@@ -40,8 +43,7 @@ reps <- read.csv(here("angsd_results/known_sample_and_tech_reps.csv"), header = 
 heatmap(m, labRow = tip_names, labCol = tip_names, cexRow = 0.1, cexCol = 0.1)
 
 #### Plot cluster dendrogram based on genetic distance (1-IBS)
-# By species, PC1 vs PC2
-png(file=here("angsd_results/madracis672_cluster_dendrogram.png"), width=40, height=7, res=300, units="in")
+png(file=here("angsd_results/madracis672/madracis672_cluster_dendrogram.png"), width=40, height=7, res=300, units="in")
 
 par(
   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
@@ -138,3 +140,37 @@ ids610 <- ids[match(Madracis610$original_ID, ids$original_ID),] #subsets the ids
 
 write.csv(ids610, here("angsd_results/bam_lists/ids_recoded610.csv"), quote = FALSE, row.names = FALSE)
 
+
+#################################################################################################
+#### Replot cluster dendrogram for 610 Madracis to make sure clone remove worked as expected ####
+#################################################################################################
+#### Read in data ####
+m <- as.matrix(read.table(here("angsd_results/madracis610/all_snps.ibsMat"), header = FALSE)) # 27M SNPs after mapping to 14 somatic chromosomes & mt chromosome
+
+# Load IDs file to assign species
+ids <- read.csv(here("angsd_results/bam_lists/ids_recoded610.csv"), header = TRUE) # 610 colonies
+
+metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
+colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
+metadata$sample_id <- paste(metadata$collector, metadata$ID, sep = "_")
+
+tip_names <- paste(metadata$species, metadata$collector, metadata$ID, sep = "_")
+
+#### Visualization ####
+#heat map
+heatmap(m, labRow = tip_names, labCol = tip_names, cexRow = 0.1, cexCol = 0.1)
+
+#### Plot cluster dendrogram based on genetic distance (1-IBS)
+png(file=here("angsd_results/madracis610/madracis610_cluster_dendrogram.png"), width=40, height=7, res=300, units="in")
+
+par(
+  mar=c(4, 3, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot(hclust(as.dist(m), "complete"), main = "Cluster Dendrogram: Madracis 610", labels = tip_names, cex = 0.3, ylab = 'Genetic distance (1-IBS)')
+
+dev.off()

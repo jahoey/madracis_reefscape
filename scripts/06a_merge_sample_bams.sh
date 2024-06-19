@@ -1,3 +1,4 @@
+# Known sample and technical reps
 samtools merge merged_rep_MDEC_est_5_JH_0345_E0419.dedup.overlapclipped.bam merged_MPHA_est_5_JH_0345_E0419.dedup.overlapclipped.bam merged_MDEC_est_5_JH_0420_E0113.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MPHA_est_20_JH_0356_E0616.dedup.overlapclipped.bam merged_MPHA_est_20_JH_0404_E0088.dedup.overlapclipped.bam merged_MPHA_est_20_JH_0356_E0616.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MPHA_est_20_JH_0360_E0623.dedup.overlapclipped.bam merged_MPHA_est_20_JH_0405_E0325.dedup.overlapclipped.bam merged_MPHA_est_20_JH_0360_E0623.dedup.overlapclipped.bam # sample rep
@@ -9,7 +10,6 @@ samtools merge merged_rep_MPHA_kal_20_JH_0211_E0246.dedup.overlapclipped.bam mer
 samtools merge merged_rep_MPHA_kal_20_JH_0206_E0296.dedup.overlapclipped.bam merged_MPHA_kal_20_JH_0545_E0197.dedup.overlapclipped.bam merged_MPHA_kal_20_JH_0206_E0296.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MSEN_kal_10_JH_0085_E0667.dedup.overlapclipped.bam merged_MSEN_kal_10_JH_0555_E0295.dedup.overlapclipped.bam merged_MSEN_kal_10_JH_0085_E0667.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MSEN_sna_20_JH_0052_E0357.dedup.overlapclipped.bam merged_MSEN_sna_20_JH_0052_E0357.dedup.overlapclipped.bam merged_MSEN_sna_20_JH_0700_E0535.dedup.overlapclipped.bam # sample rep
-#samtools merge merged_rep_MDEC_sna_20_JH_0049_E0428.dedup.overlapclipped.bam merged_MDEC_sna_20_JH_0710_E0085.dedup.overlapclipped.bam merged_MDEC_sna_20_JH_0049_E0428.dedup.overlapclipped.bam
 samtools merge merged_rep_MDEC_sna_20_JH_0042_E0280.dedup.overlapclipped.bam merged_MDEC_sna_20_JH_0042_E0280.dedup.overlapclipped.bam merged_MDEC_sna_20_JH_0582_E0294.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MSEN_sna_20_JH_0041_E0584.dedup.overlapclipped.bam merged_MSEN_sna_20_JH_0714_E0475.dedup.overlapclipped.bam merged_MSEN_sna_20_JH_0041_E0584.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MPHA_sna_5_JH_0594_E0718.dedup.overlapclipped.bam merged_MDEC_sna_5_JH_0594_E0585.dedup.overlapclipped.bam merged_MDEC_sna_5_JH_0594_E0718.dedup.overlapclipped.bam # technical rep
@@ -21,19 +21,17 @@ samtools merge merged_rep_MCAR_kal_10_JH_0143_E0274.dedup.overlapclipped.bam mer
 samtools merge merged_rep_MSEN_kal_10_JH_0550_E0349.dedup.overlapclipped.bam merged_MSEN_kal_10_JH_0550_E0349.dedup.overlapclipped.bam merged_MDEC_kal_10_JH_0089_E0485.dedup.overlapclipped.bam # sample rep
 samtools merge merged_rep_MMIR_sna_20_DV_0370_E0761.dedup.overlapclipped.bam merged_MMIR_sna_20_DV_0370_E0761.dedup.overlapclipped.bam merged_MMIR_sna_20_DV_0452_E0741.dedup.overlapclipped.bam # sample rep: DV_0452 and DV_0370; DV_0452 and DV_0451 are clones
 samtools merge merged_rep_MMIR_sna_10_DV_0497_E0734.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0497_E0734.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0498_E0735.dedup.overlapclipped.bam # sample rep
-
+# Inferred clones using 1-IBS
 samtools merge merged_clone_MDEC_kal_20_JH_0167_E0706.dedup.overlapclipped.bam merged_UNKN_kal_20_JH_0167_E0706.dedup.overlapclipped.bam merged_MDEC_kal_20_JH_0724_E0310.dedup.overlapclipped.bam # inferred clone: MDEC
 samtools merge merged_clone_MDEC_kal_10_JH_0252_E0557.dedup.overlapclipped.bam merged_UNKN_kal_10_JH_0252_E0557.dedup.overlapclipped.bam merged_MDEC_kal_10_JH_0547_E0677.dedup.overlapclipped.bam # inferred clone: MDEC
 samtools merge merged_clone_MDEC_est_10_JH_0390_E0342.dedup.overlapclipped.bam merged_MDEC_est_10_JH_0390_E0342.dedup.overlapclipped.bam merged_MDEC_est_10_JH_0387_E0033.dedup.overlapclipped.bam # inferred clone: MDEC
 samtools merge merged_clone_MDEC_sna_5_JH_0604_E0500.dedup.overlapclipped.bam merged_MDEC_sna_5_JH_0604_E0500.dedup.overlapclipped.bam merged_MDEC_sna_5_JH_0593_E0297.dedup.overlapclipped.bam # inferred clone: MDEC
 samtools merge merged_clone_MDEC_dir_5_JH_0660_E0446.dedup.overlapclipped.bam merged_MDEC_dir_5_JH_0660_E0446.dedup.overlapclipped.bam merged_MDEC_dir_5_JH_0663_E0477.dedup.overlapclipped.bam # inferred clone: MDEC, remove JH_0661
-
 samtools merge merged_clone_MMIR_sna_10_DV_0337_E0757.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0337_E0757.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0325_E0754.dedup.overlapclipped.bam # inferred clone: MIMIR, remove DV_0311 and DV_0323
 samtools merge merged_clone_MMIR_sna_10_DV_0338_E0737.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0338_E0737.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0331_E0766.dedup.overlapclipped.bam # inferred clone: MMIR
 samtools merge merged_clone_MMIR_sna_10_DV_0424_E0762.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0424_E0762.dedup.overlapclipped.bam merged_MMIR_sna_10_DV_0416_E0758.dedup.overlapclipped.bam # inferred clone: MMIR
 samtools merge merged_clone_MMIR_sna_20_DV_0275_E0768.dedup.overlapclipped.bam merged_MMIR_sna_20_DV_0275_E0768.dedup.overlapclipped.bam merged_MMIR_sna_20_DV_0271_E0760.dedup.overlapclipped.bam # inferred clone: MIMIR
 samtools merge merged_clone_MMIR_sna_20_DV_0451_E0740.dedup.overlapclipped.bam merged_MMIR_sna_20_DV_0451_E0740.dedup.overlapclipped.bam merged_rep_MMIR_sna_20_DV_0370_E0761.dedup.overlapclipped.bam # inferred clone: MMIR, delt with JH_0370 above
-
 samtools merge merged_clone_MPHA_kal_20_JH_0193_E0338.dedup.overlapclipped.bam merged_UNKN_kal_20_JH_0193_E0338.dedup.overlapclipped.bam merged_UNKN_kal_20_JH_0192_E0070.dedup.overlapclipped.bam # inferred clone: MPHA
 samtools merge merged_clone_MPHA_kal_20_JH_0222_E0494.dedup.overlapclipped.bam merged_UNKN_kal_20_JH_0222_E0494.dedup.overlapclipped.bam merged_UNKN_kal_20_JH_0221_E0307.dedup.overlapclipped.bam # inferred clone: MPHA
 samtools merge merged_clone_MPHA_kal_10_JH_0262_E0243.dedup.overlapclipped.bam merged_UNKN_kal_10_JH_0262_E0243.dedup.overlapclipped.bam merged_MPHA_kal_10_JH_0079_E0631.dedup.overlapclipped.bam # inferred clone: MPHA
@@ -50,7 +48,6 @@ samtools merge merged_clone_MPHA_dir_20_JH_0658_E0126.dedup.overlapclipped.bam m
 samtools merge merged_clone_MPHA_hul_20_JH_0678_E0559.dedup.overlapclipped.bam merged_MCAR_hul_20_JH_0678_E0559.dedup.overlapclipped.bam merged_MCAR_hul_20_JH_0677_E0697.dedup.overlapclipped.bam # inferred clone: MPHA
 samtools merge merged_clone_MPHA_sna_20_JH_0695_E0277.dedup.overlapclipped.bam merged_MPHA_sna_20_JH_0695_E0277.dedup.overlapclipped.bam merged_MPHA_sna_20_JH_0694_E0546.dedup.overlapclipped.bam merged_MPHA_sna_20_JH_0696_E0502.dedup.overlapclipped.bam # inferred clone: MPHA
 samtools merge merged_clone_MPHA_kal_20_JH_0723_E0678.dedup.overlapclipped.bam merged_MPHA_kal_20_JH_0723_E0678.dedup.overlapclipped.bam merged_MPHA_kal_20_JH_0542_E0160.dedup.overlapclipped.bam # inferred clone: MPHA
-
 samtools merge merged_clone_MSEN_sna_10_JH_0012_E0470.dedup.overlapclipped.bam merged_MPHA_sna_10_JH_0012_E0470.dedup.overlapclipped.bam merged_SINT_sna_20_JH_0013_E0713.dedup.overlapclipped.bam # inferred clone: MSEN
 samtools merge merged_clone_MSEN_sna_10_JH_0031_E0621.dedup.overlapclipped.bam merged_MSEN_sna_10_JH_0031_E0621.dedup.overlapclipped.bam merged_MPHA_sna_20_JH_0707_E0201.dedup.overlapclipped.bam # inferred clone: MSEN
 samtools merge merged_clone_MSEN_sna_10_JH_0011_E0361.dedup.overlapclipped.bam merged_MPHA_sna_10_JH_0011_E0361.dedup.overlapclipped.bam merged_MPHA_sna_10_JH_0071_E0089.dedup.overlapclipped.bam # inferred clone: MSEN

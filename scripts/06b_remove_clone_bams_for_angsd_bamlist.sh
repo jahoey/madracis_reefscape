@@ -21,6 +21,7 @@ main_files=(
 "merged_rep_MDEC_kal_5_JH_0560_E0603.dedup.overlapclipped.bam"
 "merged_rep_MCAR_kal_10_JH_0143_E0274.dedup.overlapclipped.bam"
 "merged_rep_MSEN_kal_10_JH_0550_E0349.dedup.overlapclipped.bam"
+"merged_rep_MMIR_sna_20_DV_0370_E0761.dedup.overlapclipped.bam"
 "merged_rep_MMIR_sna_10_DV_0497_E0734.dedup.overlapclipped.bam"
 "merged_clone_MDEC_kal_20_JH_0167_E0706.dedup.overlapclipped.bam"
 "merged_clone_MDEC_kal_10_JH_0252_E0557.dedup.overlapclipped.bam"
@@ -56,7 +57,6 @@ main_files=(
 "merged_clone_MSEN_est_20_JH_0307_E0090.dedup.overlapclipped.bam"
 "merged_clone_MSEN_est_20_JH_0462_E0399.dedup.overlapclipped.bam"
 "merged_clone_MSEN_sna_20_JH_0709_E0100.dedup.overlapclipped.bam"
-
 )
 
 intermediate_files=(
@@ -148,5 +148,4 @@ rm merged_MMIR_sna_10_DV_0323_E0753.dedup.overlapclipped.bam
 rm merged_UNKN_kal_40_JH_0147_E0236.dedup.overlapclipped.bam
 rm merged_UNKN_kal_40_JH_0105_E0657.dedup.overlapclipped.bam
 rm merged_UNKN_sna_60_JH_0075_E0215.dedup.overlapclipped.bam
-
 

@@ -129,8 +129,29 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 (base) jhoey@tdobz:~$ ls $BASEDIR/ld/all_snps.ld | Rscript --vanilla --slave ~/programs/ngsLD/scripts/fit_LDdecay.R --out $BASEDIR/ld/ld_plot.pdf --fit_level 100
 ```
 
-16. Based on estimated LD decay, calculate LD for SNPs on each chromosome using `ngsLD`.
-18. Use `prune_graph` to prune SNPs for each chromosome. This generates a list of independent SNPs for each chromosome.
+16. Prepare input files for calcuating pairwise LD. Next, divide these files up by chromosome. Based on estimated LD decay, finally calculate LD for SNPs on each chromosome using `ngsLD`.
+```
+# Prepare the input files for calculating pairwise LD
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+
+# Make input files for all SNPs: 27582048 SNPs
+# Remove first line and first 3 columns for every SNP
+(base) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results$ zcat $BASEDIR/global_snps/all_snps.beagle.gz | awk 'NR>1' | cut -f 4- | gzip > $BASEDIR/ld/all_snps.beagle.ld.gz
+
+# Remove first line and keep first 2 columns for every SNP
+(base) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results$ zcat $BASEDIR/global_snps/all_snps.mafs.gz | cut -f 1,2 | awk 'NR>1' | sed 's/:/_/g' | gzip > $BASEDIR/ld/all_snps.mafs.ld.pos.gz
+```
+  * [07a_divide_mafs_files.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07a_divide_mafs_files.sh)
+  * [07b_divide_beagle_files.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07b_divide_beagle_files.sh)
+  * [07c_run_ngsLD_chromosomes.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07c_run_ngsLD_chromosomes.sh)
+
+17. Use `prune_graph` to prune SNPs for each chromosome. This generates a list of independent SNPs for each chromosome. For an example of how to run `prune_graph`, see below
+```
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+
+cat $BASEDIR/ld/output_chromosomes/OZ060699_snps.ld | ./target/release/prune_graph --weight-field "column_7" --weight-filter "column_3 <= 12000 && column_7 >= 0.5" -n 4 --out $BASEDIR/ld/output_chromosomes_unlinked_flor/OZ060699_snps_unlinked.ld
+```
+
 19. Merge the chromosome-level SNPs lists and use this to filter the `angsd` output.
 20. Generate `angsd` covariance matrix using LD-pruned SNPs.
 21. Generate `PCangsd` covariance matrix for LD-pruned SNPs.

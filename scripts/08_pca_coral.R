@@ -87,7 +87,7 @@ plot(pca)
 ######################################################################################################################################
 #### Base plot for pcangsd covariance matrix ####
 # By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis606/madracis606_coralpca_pcangsd.png", width=9, height=9, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis606/madracis606_coralpca_pcangsd.png", width=9.5, height=9, res=300, units="in")
 
 par(
   mar=c(4, 3, 3, 1), # panel margin size in "line number" units

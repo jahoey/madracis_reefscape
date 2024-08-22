@@ -30,18 +30,19 @@ done < libs_all_label_convert.txt
    * [02a_sam2bam_lane1.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/02a_sam2bam_lane1.sh)
    * [02b_sam2bam_lane2.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/02b_sam2bam_lane2.sh)
    * [02c_sam2bam_lane3.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/02c_sam2bam_lane3.sh)
-6. Run `qualimap` to understand library and lane level mapping quality.
+6. Run `qualimap` to understand lane level mapping quality (optional).
    * [03a_quality_reports.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/03a_quality_reports.sh)
    * [03b_cat_coverage.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/03b_cat_coverage.sh)
-7. Merge the bam files across the three sequencing lanes.
+7. Merge the sample bam files across the three sequencing lanes.
    * [04_merge_bams.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/04_merge_bams.sh)
 8. Deduplicate (`MARKDUPLICATES`), clip overlapping read pairs (`clipOverlap`), and reindex the bams before rerunning `qualimap` to determine library level mapping quality and coverage.
    * [05a_dedup.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05a_dedup.sh)
-   * Like [03a_quality_reports.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/03a_quality_reports.sh)
-   * [05b_coverage.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05b_coverage.R)
+   * 05b_quality_reports.sh
+   * 05c_cat_coverage.sh
+   * 05d_coverage.R
 
 ## Genotype likelihoods and SNP calling for 672 coral libraries
-9. Use `angsd` to do some basic filtering and then calculate genotype likelihoods, determine allele frequencies, and call SNPs across all 672 libraries. This requires a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_bam_list_madracis672.txt) that will be used by `angsd`.
+9. Use angsd to do some basic filtering and then calculate genotype likelihoods, determine allele frequencies, and call SNPs across all 672 libraries. This requires a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_bam_list_madracis672.txt) that will be used by `angsd`.
 ```
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_results
 
@@ -78,7 +79,7 @@ REFERENCE=~/references/asg/June2024/GCA_964059495-chromosomes.fasta
 13. Create a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_no_clone_bam_list.txt) that does not contain putative clones, reindex bams, and rerun `angsd` again for 606 *Madracis* to calculate genotype likelihoods and call SNPs. Again prepare a global SNP list, index, and generate a new covariance matrix. Replot the resulting clustering dendrogram to ensure that all technical, sample, and putative clone groups were sucessfully dealt with.
 
 ```
-# Rerun `angsd`
+# Rerun angsd
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 
 ls /home/jhoey/references/asg/June2024/reference_split/* | parallel -j 15 "angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -ref ~/references/asg/June2024/GCA_964059495-chromosomes.fasta -out $BASEDIR/temp_snps/{/} -rf {} -P 1 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minMapQ 20 -minQ 20 -minInd 303 -setMinDepth 20 -setMaxDepth 60600 -doCounts 1 -GL 1 -doGlf 2 -doMajorMinor 1 -doMaf 2 -SNP_pval 1e-6 -skipTriallelic 1"
@@ -110,7 +111,7 @@ REFERENCE=~/references/asg/June2024/GCA_964059495-chromosomes.fasta
 ## Estimate linkeage disequilibrium (LD) and LD prune the global SNP list
 15. Estimate LD using a subset of sites and `ngsLD`.
 ```
-# Prepare input files for `ngsLD`
+# Prepare input files for ngsLD
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 
 # Make input files using one SNP in every 10 SNPs. This will reduce the computation issues with estimating LD: goes from 27582048 SNPs to 2758204 for LD estimation

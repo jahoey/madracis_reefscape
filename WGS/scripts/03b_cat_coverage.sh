@@ -16,10 +16,10 @@ awk '/mean mapping quality/' $f | sed -e 's/^[ \s]*//' | cut -d ' ' -f 5 >> mapp
 done
 
 # Essentially cbind each of the files to each other
-paste bam_names.txt coverage_mean.txt coverage_sd.txt total_reads.txt mapped_reads.txt mapping_quality.txt>> mapping2msen_denovo_stats.txt
+paste bam_names.txt coverage_mean.txt coverage_sd.txt total_reads.txt mapped_reads.txt mapping_quality.txt >> mapping2mmir_asg_June2024_lane_stats.txt
 
 # Adds header names
-cat mapping_names.txt mapping2msen_denovo_stats.txt >> mapping2msen_denovo_stats_headers.txt
+cat mapping_names.txt mapping2mmir_asg_June2024_lane_stats.txt >> mapping2mmir_asg_June2024_lane_stats_headers.txt
 
 # Remove intermediate files
 rm bam_names.txt
@@ -28,4 +28,4 @@ rm coverage_sd.txt
 rm total_reads.txt
 rm mapped_reads.txt
 rm mapping_quality.txt
-rm mapping2msen_denovo_stats.txt
+rm mapping2mmir_asg_June2024_lane_stats.txt

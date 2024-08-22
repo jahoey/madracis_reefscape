@@ -1,0 +1,637 @@
+library(here)
+library(ggplot2)
+library(plotrix)
+library(scales)
+library(car)
+library(lattice)
+library(multcompView)
+library(FSA)
+library(visreg)
+library(stringr)
+
+#### Functions ####
+# Function to draw error bar later
+error.bar.y <- function(x, y, upper, lower=upper, length=0.01,...){
+  arrows(x,y+upper, x, y-lower, angle=90, code=3, length=length, ...)
+} # error bar function for y axis
+
+error.bar.x <- function(x, y, right, left=right, length=0.01,...){
+  arrows(x+right,y, x-left, y, angle=90, code=3, length=length, ...)
+} # error bar function for x axis
+
+add.alpha <- function(col, alpha=1){
+  if(missing(col))
+    stop("Please provide a vector of colours.")
+  apply(sapply(col, col2rgb)/255, 2, 
+        function(x) 
+          rgb(x[1], x[2], x[3], alpha=alpha))  
+}
+
+# Function to generate Tukey labels
+generate_label_df <- function(TUKEY, variable){
+  
+  # Extract labels and factor levels from Tukey post-hoc 
+  #Tukey.levels <- TUKEY[[variable]][,4]
+  Tukey.levels <- TUKEY$Species_mpha[,4]
+  Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
+  
+  #I need to put the labels in the same order as in the boxplot :
+  Tukey.labels$Species_mpha=rownames(Tukey.labels)
+  Tukey.labels=Tukey.labels[order(Tukey.labels$Species_mpha) , ]
+  return(Tukey.labels)
+}
+
+
+#### Read in Nelly's & genotyped data ####
+data <- read.delim(here("Nelly_data_May2024_updatedspeciesMPHA_rescaled.csv"), header = TRUE, sep = ',') #691 x 44
+
+jah <- read.delim("~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/bam_lists/ids_recoded672.csv", header = TRUE, sep = ',') #672 x 3
+
+# Extract metadata from filenames
+names <- jah$new_ID
+names_split <- str_split_fixed(names, '_', 6)
+
+id_original <- paste(names_split[,4], names_split[,5], sep = "_")
+
+
+#### Subset the data ####
+nelly_geno <- data[data$ID %in% id_original,]
+
+# Decide if all of Nelly's data will be used or just genotyped photos
+# madracis_data <- data[!data$Species_mpha %in% c('ORB', 'PPOR', 'SINT'),] #686 x 44
+
+madracis_data <- nelly_geno[!nelly_geno$Species_mpha %in% c('ORB', 'PPOR', 'SINT'),] #592 x 44
+
+madracis_data$Yellow.Ruler[which(madracis_data$Yellow.Ruler == "")] <- 'no'
+
+#### Divide the dataframe into 2 separate dataframes: one for septa and one for IC distance ####
+# Intercorallite distance
+ic.dist <- madracis_data[,-c(10:24)]
+
+# Let's figure out how much missing data there are in the data columns. 
+which(rowSums(is.na(ic.dist[10:24])) > 0) # this returns the rows of IC distance containing NAs
+
+# Remove the rows containing any NAs for IC distance
+ic.dist.trimmed <- ic.dist[-which(rowSums(is.na(ic.dist[10:24])) > 0),] #651 x 29
+
+# Septa
+septa <- madracis_data[,-c(25:39)]
+
+# Let's figure out how much missing data there are in the data columns. 
+which(rowSums(is.na(septa[10:24])) > 5) # this returns the rows of septa containing more than 5 NAs
+
+# Remove the rows containing more than 5 NAs for septa 
+septa.trimmed <- septa[-which(rowSums(is.na(septa[10:24])) > 5),] #610 x 29
+
+#### Calculate the mean of columns 9 through 23 and store it in a new column ####
+septa.trimmed$Mean_Septa <- rowMeans(septa.trimmed[, 10:24], na.rm = TRUE)
+
+ic.dist.trimmed$Mean_IC <- rowMeans(ic.dist.trimmed[, 10:24], na.rm = TRUE)
+
+#### Subset datasets ####
+# Both septa and IC distance
+septa.and.icdist.trimmed <- merge(septa.trimmed, ic.dist.trimmed, by = c("ID", "Species", "Species_mpha", "Depth", "Date", "Dive_Num", "Site", "Original_macrophoto_file_name", "Diver", "Notes", "Yellow.Ruler", "Angled_Ruler", "Blurry_Square", "Yellow_Ruler_Backgroud")) # these are the colonies that have both IC dist and septa measurements: 600 x 46
+
+# IC distance (white & yellow), without blurry white squares
+ic.dist.trimmed.quality <- ic.dist.trimmed[!ic.dist.trimmed$Blurry_Square %in% 'Blurry',] #remove blurry square
+
+# IC distance with only blurry white squares
+ic.dist.trimmed.blurry <- ic.dist.trimmed[ic.dist.trimmed$Blurry_Square %in% 'Blurry',]
+
+# IC distance only, by method
+ic.dist.trimmed.white <- ic.dist.trimmed[which(ic.dist.trimmed$Yellow.Ruler == 'no'),]
+ic.dist.trimmed.yellow <- ic.dist.trimmed[which(ic.dist.trimmed$Yellow.Ruler == 'yes'),]
+
+# High quality white squares
+ic.dist.trimmed.white.quality <- ic.dist.trimmed.white[!ic.dist.trimmed.white$Blurry_Square %in% 'Blurry',] #remove blurry square
+
+# High quality yellow ruler
+ic.dist.trimmed.yellow.quality <- ic.dist.trimmed.yellow[!ic.dist.trimmed.yellow$Angled_Ruler %in% 'Angled',] #remove angled
+
+
+#### Measurements by species ####
+septa.by.species <- aggregate(Mean_Septa ~ Species_mpha, data = septa.trimmed, 
+                              FUN = function(x) c(mean = mean(x), se = std.error(x))) # septa only
+
+ic.by.species <- aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed, 
+                              FUN = function(x) c(mean = mean(x), se = std.error(x))) # ic dist only
+
+septa.and.icdist.by.species <- aggregate(list(septa = septa.and.icdist.trimmed$Mean_Septa, ic = septa.and.icdist.trimmed$Mean_IC), by = list(septa.and.icdist.trimmed$Species_mpha), FUN = function(x) c(mean = mean(x), se = std.error(x))) # both septa and ic dist
+
+#### Visualizing data: Scatterplots & boxplots ####
+# colors_mpha <- c("#ff6347", "#ff9a81", "#32a852", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #use when all of Nelly's dat are used for extra MPHA group
+colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #for genotyped data only
+show_col(colors_mpha)
+
+# Yellow ruler vs white square
+cols <- c('tomato', 'blue')
+plot(septa.and.icdist.trimmed$Mean_IC, septa.and.icdist.trimmed$Mean_Septa, col = add.alpha(cols[factor(septa.and.icdist.trimmed$Yellow.Ruler)], 0.7))
+
+boxplot(Mean_IC ~ Yellow.Ruler + Species_mpha, data = ic.dist.trimmed, col = cols)
+
+ggplot(ic.dist.trimmed) +
+  aes(x = Species_mpha, y = Mean_IC, fill = Yellow.Ruler) +
+  geom_boxplot()
+
+# Average species IC dist vs septa
+plot(septa.and.icdist.by.species$ic[,1], septa.and.icdist.by.species$septa[,1], col = alpha('white', 0.8), pch = 19, xlab = 'Average IC dist (mm)', ylab = 'Average septa count', xlim = c(1.1,2), ylim = c(6,10))
+error.bar.y(septa.and.icdist.by.species$ic[,1], septa.and.icdist.by.species$septa[,1], septa.and.icdist.by.species$septa[,2], col = colors_mpha, lwd = 2) # septa error bars
+error.bar.x(septa.and.icdist.by.species$ic[,1], septa.and.icdist.by.species$septa[,1], septa.and.icdist.by.species$ic[,2], col = colors_mpha, lwd = 2) # ic dist error bars
+
+# Scatterplot of IC dist vs species, depth, site & method
+ggplot(ic.dist.trimmed) +
+  aes(x = Species_mpha, y = Mean_IC, colour = Yellow.Ruler) +
+  geom_point() +
+  scale_color_continuous() +
+  labs(
+    y = "Intercorallite Distance",
+    x = "Species",
+    color = "Yellow Ruler"
+  ) +
+  theme_minimal()
+
+# IC distance: Yellow vs quality white squares
+ggplot(ic.dist.trimmed.quality) +
+  aes(x = Species_mpha, y = Mean_IC, colour = Yellow.Ruler) +
+  geom_point() +
+  scale_color_discrete() +
+  labs(
+    y = "Intercorallite Distance",
+    x = "Species",
+    color = "Yellow Ruler"
+  ) +
+  theme_minimal()
+
+boxplot(Mean_IC ~ Yellow.Ruler + Species_mpha, data = ic.dist.trimmed.quality, col = cols)
+
+ggplot(ic.dist.trimmed.quality) +
+  aes(x = Species_mpha, y = Mean_IC, fill = Yellow.Ruler) +
+  geom_boxplot()
+
+# White square photo quality
+ggplot(ic.dist.trimmed.white) +
+  aes(x = Species_mpha, y = Mean_IC, fill = Blurry_Square) +
+  geom_boxplot()
+
+ggplot(ic.dist.trimmed.white) +
+  aes(x = Species_mpha, y = Mean_IC, colour = Blurry_Square) +
+  geom_point() +
+  scale_color_discrete() +
+  labs(
+    y = "Intercorallite Distance",
+    x = "Species",
+    color = "Blurry_Square"
+  ) +
+  theme_minimal()
+
+# Yellow quality
+ggplot(ic.dist.trimmed.yellow) +
+  aes(x = Species_mpha, y = Mean_IC, fill = Yellow_Ruler_Backgroud) +
+  geom_boxplot()
+
+ggplot(ic.dist.trimmed.yellow) +
+  aes(x = Species_mpha, y = Mean_IC, fill = Angled_Ruler) +
+  geom_boxplot()
+
+#### Statistics ####
+## Inter corallite distance for white squares & yellow ruler ##
+# ANOVA with interactions
+ic.lm <- lm(Mean_IC ~ Species_mpha + Yellow.Ruler, data = ic.dist.trimmed) # + Blurry_Square + Angled_Ruler + Yellow_Ruler_Backgroud * Depth * Site
+# First tried: Mean_IC ~ Species_mpha * Yellow.Ruler * Depth * Site, data = ic.dist.trimmed. Yellow.Ruler:Site, Yellow.Ruler:Depth:Site and Species_mpha:Yellow.Ruler:Depth:Site were significant. Adjusted R-squared:  0.4082
+# Next: Mean_IC ~ Species_mpha * Yellow.Ruler, data = ic.dist.trimmed. Interaction not sig, so removed. Adjusted R-squared w/o interaction:  0.3845
+
+summary(ic.lm)
+Anova(ic.lm, type = 3)
+
+visreg(ic.lm, "Depth", by = "Yellow.Ruler")
+visreg(ic.lm, "Species_mpha", by = "Yellow.Ruler")
+visreg(ic.lm, "Site", by = "Yellow.Ruler")
+
+## Inter corallite distance for white squares ##
+ic.white.lm <- lm(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white) # first included depth, then removed b/c not significant
+
+summary(ic.white.lm)
+Anova(ic.white.lm, type = 3)
+
+visreg(ic.white.lm, "Species_mpha", by = "Blurry_Square")
+
+par(mfrow = c(1,2)) # combine plots
+hist(ic.white.lm$residuals) # histogram
+qqPlot(ic.white.lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(ic.white.lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white)
+dotplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white)
+
+boxplot(Mean_IC ~ Site, data = ic.dist.trimmed.white)
+dotplot(Mean_IC ~ Site, data = ic.dist.trimmed.white)
+
+leveneTest(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white) # formal Levene's test for equality of variances
+leveneTest(Mean_IC ~ Site, data = ic.dist.trimmed.white) # formal Levene's test for equality of variances
+
+aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white,
+          function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+summary(ic.white.lm)
+
+Anova(ic.white.lm)
+TUKEY <- TukeyHSD(aov(ic.white.lm))
+
+plot(TUKEY)
+
+png(file=here("ic_dist_white_geno.png"), width=8, height=6, res=300, units="in")
+
+# Basic boxplot
+a <- boxplot(ic.dist.trimmed.white$Mean_IC ~ ic.dist.trimmed.white$Species_mpha, col = colors_mpha, ylim = c(0.4,2.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.white$Mean_IC ~ ic.dist.trimmed.white$Species_mpha,              # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# I need to group the treatments that are not different each other together.
+generate_label_df <- function(TUKEY, variable){
+  
+  # Extract labels and factor levels from Tukey post-hoc 
+  #Tukey.levels <- TUKEY[[variable]][,4]
+  Tukey.levels <- TUKEY$Species_mpha[,4]
+  Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
+  
+  #I need to put the labels in the same order as in the boxplot :
+  Tukey.labels$Species_mpha=rownames(Tukey.labels)
+  Tukey.labels=Tukey.labels[order(Tukey.labels$Species_mpha) , ]
+  return(Tukey.labels)
+  }
+
+# Apply the function on my dataset
+LABELS <- generate_label_df(TUKEY , "ic.dist.trimmed.white$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.1*max( a$stats[nrow(a$stats),] )
+
+#Add the labels
+text( c(1:7) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col= 'black' )
+
+dev.off()
+
+## Inter corallite distance for yellow ruler ##
+# ANOVA
+ic.yellow.lm <- lm(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.yellow.quality) # first included depth, then removed b/c not significant
+# First: Mean_IC ~ Species_mpha * Depth * Site, data = ic.dist.trimmed.yellow. Adjusted R-squared:  0.02988 
+# Second: Mean_IC ~ Species_mpha * Angled_Ruler * Yellow_Ruler_Backgroud, data = ic.dist.trimmed.yellow. Angled_Ruler is sig.
+# Third: Remove Angled ruler from the dataset
+
+summary(ic.yellow.lm)
+Anova(ic.yellow.lm, type = 3)
+
+visreg(ic.yellow.lm, "Species_mpha", by = "Depth")
+visreg(ic.yellow.lm, "Species_mpha", by = "Site")
+visreg(ic.yellow.lm, "Site", by = "Yellow.Ruler")
+
+par(mfrow = c(1,2)) # combine plots
+hist(ic.yellow.lm$residuals) # histogram
+qqPlot(ic.yellow.lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(ic.yellow.lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.yellow.quality)
+dotplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.yellow.quality)
+
+boxplot(Mean_IC ~ Site, data = ic.dist.trimmed.yellow.quality)
+dotplot(Mean_IC ~ Site, data = ic.dist.trimmed.yellow.quality)
+
+leveneTest(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.yellow.quality) # formal Levene's test for equality of variances
+
+aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.yellow.quality,
+          function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+summary(ic.yellow.lm)
+
+Anova(ic.yellow.lm)
+TUKEY2 <- TukeyHSD(aov(ic.yellow.lm))
+
+plot(TUKEY2)
+
+png(file=here("ic_dist_yellow_quality_geno.png"), width=8, height=6, res=300, units="in")
+
+# Basic boxplot
+b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha, ylim = c(0.8,3.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS2 <- generate_label_df(TUKEY2 , "ic.dist.trimmed.yellow.quality$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.15*max( b$stats[nrow(b$stats),] )
+
+#Add the labels
+text( c(1:7) , b$stats[nrow(b$stats),]+over , LABELS2[,1]  , col= 'black' )
+
+dev.off()
+
+## Intercorallite distance using only high quality white squares ##
+# ANOVA
+ic.white.quality.lm <- lm(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality)
+# First: Mean_IC ~ Species_mpha*Depth*Site, data = ic.dist.trimmed.white.quality. Species_mpha and Species_mpha:Depth are sig. Adjusted R-squared:  0.1735 
+# Second: Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality. Species_mpha is sig. Adjusted R-squared:  0.1384
+
+summary(ic.white.quality.lm)
+Anova(ic.white.quality.lm, type = 3)
+
+visreg(ic.white.quality.lm, "Species_mpha", by = "Depth")
+visreg(ic.white.quality.lm, "Species_mpha", by = "Site")
+
+par(mfrow = c(1,2)) # combine plots
+hist(ic.white.quality.lm$residuals) # histogram
+qqPlot(ic.white.quality.lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(ic.white.quality.lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality)
+dotplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality)
+
+leveneTest(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality) # formal Levene's test for equality of variances
+
+aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality,
+          function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+summary(ic.white.quality.lm)
+
+Anova(ic.white.quality.lm, type = '2')
+TUKEY3 <- TukeyHSD(aov(ic.white.quality.lm))
+
+plot(TUKEY3)
+
+png(file=here("ic_dist_white_quality_geno.png"), width=8, height=6, res=300, units="in")
+
+# Basic boxplot
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = 'Species', ylab = 'Average Intercorallite Distance', ylim = c(0.8, 2.8), outline = FALSE)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS3 <- generate_label_df(TUKEY3 , "ic.dist.trimmed.white.quality$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.2*max(c$stats[nrow(c$stats),] )
+
+#Add the labels
+text( c(1:7) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
+
+dev.off()
+
+# Plot combination plot of IC distance split by quality yellow ruler and quality white squares
+png(file=here("ic_dist_yellow vs_quality_white_geno.png"), width=9, height=5, res=300, units="in")
+
+par(
+  mar=c(5, 4, 2, 0.5), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(1,2)
+)
+
+# Basic boxplot for yellow ruler
+b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha, ylim = c(1,3), xlab = '', ylab = '', outline = FALSE, main = 'Quality yellow ruler (n = 111)', las = 1, xaxt = 'n', yaxt = 'n')
+axis(1, labels = FALSE)
+mtext("Species", side = 1, line = 4)
+axis(2, las = 2)
+mtext("Average Intercorallite Distance", side = 2, line = 3)
+
+text(x = 1:6,
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.1,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), # "MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS2 <- generate_label_df(TUKEY2 , "ic.dist.trimmed.yellow.quality$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.23*max( b$stats[nrow(b$stats),] )
+
+#Add the labels
+text( c(1:6) , b$stats[nrow(b$stats),]+over , LABELS2[,1]  , col= 'black' )
+
+# Basic boxplot for quailty white squares
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(1, 3), outline = FALSE, main = 'Quality white square (n = 275)', xaxt = 'n', yaxt = 'n')
+axis(1, labels = FALSE)
+mtext("Species", side = 1, line = 4)
+axis(2, las = 2)
+mtext("Average Intercorallite Distance", side = 2, line = 3)
+
+text(x = 1:6,
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.1,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), #"MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS3 <- generate_label_df(TUKEY3 , "ic.dist.trimmed.white.quality$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.25*max(c$stats[nrow(c$stats),] )
+
+#Add the labels
+text( c(1:6) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
+
+dev.off()
+
+## Septa ##
+# ANOVA
+septa.lm <- lm(Mean_Septa ~ Species_mpha, data = septa.trimmed) # + Depth + Site + Blurry_Square
+summary(septa.lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(septa.lm$residuals) # histogram
+qqPlot(septa.lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(septa.lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed)
+dotplot(Mean_Septa ~ Species_mpha, data = septa.trimmed)
+
+boxplot(Mean_Septa ~ Site, data = septa.trimmed)
+dotplot(Mean_Septa ~ Site, data = septa.trimmed)
+
+leveneTest(Mean_Septa ~ Species_mpha, data = septa.trimmed) # formal Levene's test for equality of variances
+leveneTest(Mean_Septa ~ Site, data = septa.trimmed) # formal Levene's test for equality of variances
+
+aggregate(Mean_Septa ~ Species_mpha, data = septa.trimmed,
+          function(x) round(c(mean = mean(x), sd = sd(x)), 2)
+)
+
+summary(septa.lm)
+
+Anova(septa.lm)
+TUKEY4 <- TukeyHSD(aov(septa.lm))
+
+plot(TUKEY4)
+
+png(file=here(here("plots/septa_geno.png")), width=9, height=5, res=300, units="in")
+
+par(
+  mar=c(5, 4, 2, 0.5), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(1,2)
+)
+
+# Basic boxplot
+d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 529)', xaxt = 'n', yaxt = 'n')
+axis(1, labels = FALSE)
+mtext("Species", side = 1, line = 4)
+axis(2, las = 2)
+mtext("Average Septa Count", side = 2, line = 3)
+
+text(x = 1:6,
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.4,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), #"MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+# Add data points
+# Points
+stripchart(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS4 <- generate_label_df(TUKEY4 , "septa.trimmed$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.15*max( d$stats[nrow(d$stats),] )
+
+#Add the labels
+text( c(1:6) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
+
+dev.off()
+
+# Kruskal-Wallis Test
+septa.kw <- kruskal.test(Mean_Septa ~ Species_mpha, data = septa.trimmed)
+septa.kw
+
+dunnTest(Mean_Septa ~ Species_mpha, data = septa.trimmed, method = 'holm')
+
+
+
+
+
+
+
+
+
+
+
+
+#### Sandbox ####
+# ANOVA
+ic.blurry.lm <- lm(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.blurry)
+
+summary(ic.blurry.lm)
+Anova(ic.blurry.lm, type = 3)
+
+TUKEY100 <- TukeyHSD(aov(ic.blurry.lm))
+plot(TUKEY100)
+
+png(file=here("ic_dist_white_blurry.png"), width=8, height=6, res=300, units="in")
+
+# Boxplot
+e <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.blurry, col = colors_mpha[-1], ylim = c(0.5,2.5), outline = FALSE, xlab = 'Species', ylab = 'Average Intercorallite Distance')
+
+# Points
+stripchart(ic.dist.trimmed.blurry$Mean_IC ~ ic.dist.trimmed.blurry$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS100 <- generate_label_df(TUKEY100 , "ic.dist.trimmed.blurry$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.3*max(e$stats[nrow(e$stats),] )
+
+#Add the labels
+text( c(1:7) , e$stats[nrow(e$stats),]+over , LABELS100[,1]  , col= 'black' )
+
+dev.off()
+
+
+
+

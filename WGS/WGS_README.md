@@ -37,9 +37,9 @@ done < libs_all_label_convert.txt
    * [04_merge_bams.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/04_merge_bams.sh)
 8. Deduplicate (`MARKDUPLICATES`), clip overlapping read pairs (`clipOverlap`), and reindex the bams before rerunning `qualimap` to determine library level mapping quality and coverage.
    * [05a_dedup.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05a_dedup.sh)
-   * 05b_quality_reports.sh
-   * 05c_cat_coverage.sh
-   * 05d_coverage.R
+   * [05b_quality_reports.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05b_quality_reports.sh)
+   * [05c_cat_coverage.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05c_cat_coverage.sh)
+   * [05d_coverage.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05d_coverage.R)
 
 ## Genotype likelihoods and SNP calling for 672 coral libraries
 9. Use angsd to do some basic filtering and then calculate genotype likelihoods, determine allele frequencies, and call SNPs across all 672 libraries. This requires a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_bam_list_madracis672.txt) that will be used by `angsd`.

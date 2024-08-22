@@ -2,6 +2,10 @@ This directory contains steps for handling raw WGS data and analyses for 672 *Ma
 
 `/angsd_results`: output from angsd analyses
 
+  * `/bam_lists`: list of bam files required by `angsd` as well as name conversion files as the lineage categories have been refined
+  * `/madracis606`: subsequent output after all sample, technical, putative clones, and SINT were removed
+  * `/madracis672`: initial output when all 672 libraries were included
+
 `/scripts`: scripts for bioinformatics and genomic analyses
 
 `/metadata`: associated metadata needed to rename files

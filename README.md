@@ -8,3 +8,5 @@ The following directories describe the main datasets, analyses and output for ea
 [**/morphology**](https://github.com/jahoey/madracis_reefscape/tree/main/morphology)
 
 [**/3D_models**](https://github.com/jahoey/madracis_reefscape/tree/main/3D_models)
+
+![A beautiful Madracis](https://github.com/jahoey/madracis_reefscape/blob/main/assets/1G4A0142.JPG)

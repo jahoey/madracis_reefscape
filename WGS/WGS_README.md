@@ -66,7 +66,7 @@ REFERENCE=~/references/asg/June2024/GCA_964059495-chromosomes.fasta
 # Index the SNP list
 (angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_results/global_snps$ angsd sites index ./madracis672_global_snps.txt
 
-# Generate `angsd` covariance and IBS matrix
+# Generate angsd covariance and IBS matrix
 (angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_results/global_snps$ angsd -b $BASEDIR/angsd_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/all_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis672_global_snps.txt
 ```
 
@@ -100,7 +100,7 @@ REFERENCE=~/references/asg/June2024/GCA_964059495-chromosomes.fasta
 # Index the new snps list
 (angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd sites index ./madracis606_global_snps.txt
 
-# Generate new `angsd` covariance matrix
+# Generate new angsd covariance matrix
 (angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/all_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis606_global_snps.txt
 ```
 
@@ -153,11 +153,34 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 cat $BASEDIR/ld/output_chromosomes/OZ060699_snps.ld | ./target/release/prune_graph --weight-field "column_7" --weight-filter "column_3 <= 12000 && column_7 >= 0.5" -n 4 --out $BASEDIR/ld/output_chromosomes_unlinked_flor/OZ060699_snps_unlinked.ld
 ```
 
-19. Merge the chromosome-level SNPs lists and use this to filter the `angsd` output.
-20. Generate `angsd` covariance matrix using LD-pruned SNPs.
-21. Generate `PCangsd` covariance matrix for LD-pruned SNPs.
+18. Merge the chromosome-level SNPs lists and use this to filter the `angsd` output.
+```
+# Combine all chromosome-level LD-pruned SNP files together
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+
+# Combine all the .ld output files into one file
+cat $BASEDIR/ld/output_chromosomes_unlinked_flor/*unlinked.ld > $BASEDIR/ld/all_snps_unlinked.ld
+
+# Filter the angsd output to match the LD-pruned SNP list
+awk 'NR==FNR {a[$0]; next} ($1"\t"$2) in a' <(sed 's/:/\t/' ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/ld/all_snps_unlinked.ld) ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps/madracis606_global_snps.txt > ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps/madracis606_ldpruned_global_snps.txt # output file length should match with length of pruned LD file
+```
+
+19. Generate `angsd` covariance matrix using LD-pruned SNPs.
+```
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+
+(angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/unlinked_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis606_ldpruned_global_snps.txt
+```
+
+20. Generate `PCangsd` covariance matrix for LD-pruned SNPs.
+```
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+
+(pcangsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ pcangsd -b $BASEDIR/global_snps/unlinked_snps.beagle.gz -o $BASEDIR/global_snps/PCAngsd_madracis606_unlinkedsnps_covmat -t 50 --tree
+```
 
 ## Clustering analysis
 21. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
-22. Run `ngsAdmix` for 10 replicates of K = 6-12
+     * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
+23. Run `ngsAdmix` for 10 replicates of K = 6-12
 

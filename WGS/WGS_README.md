@@ -150,30 +150,24 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
   * [07b_divide_beagle_files.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07b_divide_beagle_files.sh)
   * [07c_run_ngsLD_chromosomes.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07c_run_ngsLD_chromosomes.sh)
 
-17. Use `prune_graph` to prune SNPs for each chromosome. This generates a list of independent SNPs for each chromosome. For an example of how to run `prune_graph`, see below
-```
-BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+17. Use `prune_graph` to determine which SNPs should be kept for each chromosome. This generates a list of independent SNPs for each chromosome. SNPs are filtered based on physical distance along the chromosome (12kb) and correlation of pairwise LD (0.5).
+  * [07d_prune_graph4unlinked_snpids.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07d_prune_graph4unlinked_snpids.sh)
 
-cat $BASEDIR/ld/output_chromosomes/OZ060699_snps.ld | ./target/release/prune_graph --weight-field "column_7" --weight-filter "column_3 <= 12000 && column_7 >= 0.5" -n 4 --out $BASEDIR/ld/output_chromosomes_unlinked_flor/OZ060699_snps_unlinked.ld
-```
+18. Now filter the `angsd` global snp list for each chromosome. Then merge the chromosome-level unlinked SNPs lists into a single list.
+  * [07e_global2unlinked_snps.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07e_global2unlinked_snps.sh)
 
-18. Merge the chromosome-level SNPs lists and use this to filter the `angsd` output.
 ```
-# Combine all chromosome-level LD-pruned SNP files together
-BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/ld/output_chromosomes_unlinked
 
 # Combine all the .ld output files into one file
-cat $BASEDIR/ld/output_chromosomes_unlinked_flor/*unlinked.ld > $BASEDIR/ld/all_snps_unlinked.ld
-
-# Filter the angsd output to match the LD-pruned SNP list
-awk 'NR==FNR {a[$0]; next} ($1"\t"$2) in a' <(sed 's/:/\t/' ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/ld/all_snps_unlinked.ld) ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps/madracis606_global_snps.txt > ~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps/madracis606_ldpruned_global_snps.txt # output file length should match with length of pruned LD file
+cat $BASEDIR/*unlinked_snps.txt > $BASEDIR/madracis606_unlinked_snps.txt
 ```
 
 19. Generate `angsd` covariance matrix using LD-pruned SNPs.
 ```
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 
-(angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/unlinked_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis606_ldpruned_global_snps.txt
+(angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/unlinked_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis606_unlinked_snps.txt
 ```
 
 20. Generate `PCangsd` covariance matrix for LD-pruned SNPs.

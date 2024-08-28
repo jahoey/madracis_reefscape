@@ -1,0 +1,23 @@
+Column name	Description
+ID	Sample ID that links genetic data with macrophotos and 3D annotations
+Species	Visual species identity in the field (often incorrect)
+Species_mpha	"Species identity based on initial genetic assessment, if available. MPHA has been divided up into 3 lineages"
+Depth	Plot depth
+Date	This is the date of the dive. Format is Month/Day/Year
+Site	Name of the dive site
+Original_macrophoto_file_name	"The original file name, as named by the Olympus TG5 camera"
+Diver	Name of the diver who is wearing the Paralenz and did the tissue sampling
+Dive_Num	Dive number of the day. Obtained from the directory where the video footage was saved.
+Septa.#	Septa counts were attempted for 15 corallites. Corallites 1-15 are identified in annotated macrophotographs that exist in two places: Nelly's laptop and an external hard drive called 'Nelly's Madracis Backup' that is either at CAS or with Jennifer Hoey (jahoey13@gmail.com). Data taken by Nelly Batista (nellybatista9th@gmail.com). 
+IC.Distance.1	"Intercorallite distances were attempted for five groups of four corallites per photograph. Distance was measured between a central corallite and three adjacent ones. The intercorallite distances are identified in annotated macrophotographs that exist in two places: Nelly's laptop and an external hard drive called 'Nelly's Madracis Backup' that is either at CAS or with Jennifer Hoey (jahoey13@gmail.com). Data taken by Nelly Batista (nellybatista9th@gmail.com) using ImageJ. 
+
+Known scales were either the white squares in the corners of the photographs or a yellower ruler that was placed into the photograph if the camera could not be placed immediately adjacent to the colony (i.e., colony is in a crevice). Initally, it was thought that the white squares were 1 mm on each side, but this was incorrect. The white squares are 2mm on each side, so that is why Nelly's data needed to be 'rescaled'. Nelly's measurements were rescaled by Jennifer using R to multiply Nelly's measurements by 2."
+Notes	"Notes from Nelly about the photo quality, corallites, or scale."
+Yellow.Ruler	A 'yes' indicates that the yellow ruler was used to set the scale in ImageJ. 'Yellow ruler' measurements tended to be larger than 'white square' ones.
+Angled_Ruler	"Qualitative description of if the yellow ruler was angled or not, which could further influence the measured distance."
+Blurry_Square	"Qualitative description of how in focus the photograph was: Clear, Medium, Blurry or NA"
+Yellow_Ruler_Backgroud	"Qualitative description of if the yellow ruler appeared to be in the same plane as the coral, or if additional depth was introduced, which could influence the measured distance."
+Area.X	"Corallite area was attempted for 15 corallites. Corallites 1-15 are identified in annotated macrophotographs that exist in two places: Giorgio's laptop and a Google Drive folder: https://drive.google.com/drive/folders/1h16sg20Pfoj_g6Efi69Y-EUCdR_MU9bB. Most measurements done by Giorgio Terzi (giorgioterzi0028@gmail.com) and then completed by Nelly Batista. Partway through measurements, Giorgio discovered a better way to save the traced corallites using the ROI manager in ImageJ, which allows measurements to quickly be redone if the scale changes. The methods are described here: https://docs.google.com/document/d/1Zcwz7BIrWdxAO1ob20_IYMwcVF0aNojX/edit#heading=h.zh0j68bgx56e. This became relevant when it was discovered that the white square scales had 2mm sides (rather than 1mm). Corallite area couldn't be meaured for many corals because a scale was not in the photograph."
+Rescaled_Nelly	A 'yes' indicates that Nelly remeasured corallite area for this photo because the incorrect 1mm scale was initially used
+Notes.y	"Notes about the scale that was used: 1mm, 2mm or ruler"
+More.Notes	"Notes about the photo, corallites or saved output"

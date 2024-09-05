@@ -183,8 +183,10 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 (pcangsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ pcangsd -b $BASEDIR/global_snps/unlinked_snps.beagle.gz -o $BASEDIR/global_snps/PCAngsd_madracis606_unlinkedsnps_covmat -t 50 --tree
 ```
 
-## Clustering analysis
+## Clustering & assignment analysis
 22. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
      * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
-23. Run `ngsAdmix` for 10 replicates of K = 6-12
+24. Run `ngsAdmix` for 10 replicates of K = 6-12 and then concatenate results using R
+25. Plot neighbor-joining tree using R
+26. Perform DAPC using R
 

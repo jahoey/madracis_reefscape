@@ -153,7 +153,7 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 17. Use `prune_graph` to determine which SNPs should be kept for each chromosome. This generates a list of independent SNPs for each chromosome. SNPs are filtered based on physical distance along the chromosome (12kb) and correlation of pairwise LD (0.5).
   * [07d_prune_graph4unlinked_snpids.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07d_prune_graph4unlinked_snpids.sh)
 
-18. Now filter the `angsd` global snp list for each chromosome. Then merge the chromosome-level unlinked SNPs lists into a single list.
+18. Now filter the `angsd` global snp list for each chromosome. Then merge the chromosome-level unlinked SNPs lists into a single list (10950467 unlinked SNPs).
   * [07e_global2unlinked_snps.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/07e_global2unlinked_snps.sh)
 
 ```
@@ -163,14 +163,20 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/ld/outpu
 cat $BASEDIR/*unlinked_snps.txt > $BASEDIR/madracis606_unlinked_snps.txt
 ```
 
-19. Generate `angsd` covariance matrix using LD-pruned SNPs.
+19. Index the SNP list again, which is required by `angsd`
+```
+(angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd sites index ./madracis606_unlinked_snps.txt
+```
+
+20. Generate `angsd` covariance matrix using LD-pruned SNPs.
 ```
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
+REFERENCE=~/references/asg/June2024/GCA_964059495-chromosomes.fasta
 
 (angsd) jhoey@flor:~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/global_snps$ angsd -b $BASEDIR/angsd_no_clone_bam_list.txt -anc $REFERENCE -out $BASEDIR/global_snps/unlinked_snps -GL 1 -doGlf 2 -doMajorMinor 3 -doMAF 1 -doPost 1 -doIBS 1 -doCounts 1 -doCov 1 -makeMatrix 1 -sites $BASEDIR/global_snps/madracis606_unlinked_snps.txt
 ```
 
-20. Generate `PCangsd` covariance matrix for LD-pruned SNPs.
+21. Generate `PCangsd` covariance matrix for LD-pruned SNPs.
 ```
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 
@@ -178,7 +184,7 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 ```
 
 ## Clustering analysis
-21. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
+22. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
      * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
 23. Run `ngsAdmix` for 10 replicates of K = 6-12
 

@@ -186,7 +186,8 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 ## Clustering & assignment analysis
 22. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
      * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
-24. Run `ngsAdmix` for 10 replicates of K = 6-12 and then concatenate results using R
-25. Plot neighbor-joining tree using R
-26. Perform DAPC using R
+23. Run `ngsAdmix` for 10 replicates of K = 6-16 and then concatenate results using R
+     * [09_run_ngsadmix.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09_run_ngsadmix.sh)
+24. Plot neighbor-joining tree using R
+25. Perform DAPC using R
 

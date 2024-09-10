@@ -46,7 +46,7 @@ done < libs_all_label_convert.txt
    * [05d_coverage.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/05d_coverage.R)
 
 ## Genotype likelihoods and SNP calling for 672 coral libraries
-9. Use angsd to do some basic filtering and then calculate genotype likelihoods, determine allele frequencies, and call SNPs across all 672 libraries. This requires a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_bam_list_madracis672.txt) that will be used by `angsd`.
+9. Use `angsd` to do some basic filtering and then calculate genotype likelihoods, determine allele frequencies, and call SNPs across all 672 libraries. This requires a [bamlist](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/angsd_results/bam_lists/angsd_bam_list_madracis672.txt) that will be used by `angsd`.
 ```
 BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_results
 
@@ -192,6 +192,7 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 24. Plot neighbor-joining tree using R
      * [10_plot_njtree.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/10_plot_njtree.R)
 25. Perform DAPC using R
+     * [11_dapc_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/11_dapc_coral.R)
 
 ## Putting it all together into something beautiful
 26. Plot a big figure illustrating interspecific *Madracis* genetic diversity

@@ -187,7 +187,13 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 22. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
      * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
 23. Run `ngsAdmix` for 10 replicates of K = 6-16 and then concatenate results using R
-     * [09_run_ngsadmix.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09_run_ngsadmix.sh)
+     * [09a_run_ngsadmix.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09_run_ngsadmix.sh)
+     * [09b_plot_admixture.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09b_plot_admixture.R)
 24. Plot neighbor-joining tree using R
+     * [10_plot_njtree.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/10_plot_njtree.R)
 25. Perform DAPC using R
+
+## Putting it all together into something beautiful
+26. Plot a big figure illustrating interspecific *Madracis* genetic diversity
+     * madracis_composite606_plot.R 
 

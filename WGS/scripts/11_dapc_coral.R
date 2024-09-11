@@ -68,74 +68,75 @@ pca.vectors <- as_tibble(cbind(metadata$species_mpha, data.frame(eigenvectors)))
 # Calculate variance explained by each axis
 pca.eigenval.sum <- sum(madracis.pca$values) #sum of eigenvalues
 
-varPC1 <- (madracis.pca$values[1]/pca.eigenval.sum)*100 #Variance explained by PC1
-varPC2 <- (madracis.pca$values[2]/pca.eigenval.sum)*100 #Variance explained by PC2
-varPC3 <- (madracis.pca$values[3]/pca.eigenval.sum)*100 #Variance explained by PC3
-varPC4 <- (madracis.pca$values[4]/pca.eigenval.sum)*100 #Variance explained by PC4
-
 eig_percent <- round((madracis.pca$values)/(pca.eigenval.sum)*100,2)
 eig_percent[1:10]
 
-# Quick ggplot
+# Quick ggplot to confirm all looks good
 pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = metadata$species_mpha)) + geom_point()
 plot(pca)
 
 
 
-#### DAPC for 650 Madracis ####
+#### DAPC for 606 Madracis ####
 # Prepare dataframe for DAPC
-mad650_dapc_data <- cbind(ids2$new_ID, species_mpha, data.frame(madracis.pca$vectors))
-colnames(mad650_dapc_data)[3:(dim(mad650_dapc_data)[2])] <- paste0("PC",1:(dim(mad650_dapc_data)[2]-2))
-colnames(mad650_dapc_data)[1:2] <- c("individual", "population")
+mad606_dapc_data <- cbind(ids$new_ID, metadata$species_mpha, data.frame(madracis.pca$vectors))
+colnames(mad606_dapc_data)[3:(dim(mad606_dapc_data)[2])] <- paste0("PC",1:(dim(mad606_dapc_data)[2]-2)) #rename columns
+colnames(mad606_dapc_data)[1:2] <- c("individual", "population")
 
 # Evaluate number of PCs to retain
-plot(cumsum(eig_percent)[1:15], type = 'b')
-plot(1:15, madracis.pca$values[1:15], xlab = 'principal component', ylab = 'eigenvalue') #screeplot
+plot(cumsum(eig_percent)[1:15], type = 'b', ylab = 'Cumulative variance (%)', xlab = 'Number of retained PCs') #variance explained by PCA; look where curve starts to flatten out, maybe 4-5
+plot(1:15, madracis.pca$values[1:15], xlab = 'principal component', ylab = 'eigenvalue', type = 'b') #screeplot; look for elbow, 4-5 PCs
 
-n <- 6 # the number of principal components to use for discriminant analysis
+n <- 5 # the number of principal components to use for discriminant analysis
 
 #### Do PCA-LDA ####
+# set.seed(175)
+# train.index <- sample(c(1:608), 449, replace=FALSE) #455/606 = 70%
+# train.index <- c(train.index,8, 125, 127, 128, 561, 564) # There are only two MCAR, so put 1 in training dataset; 5 UNKN so put 2 in training; 6 MFOR so put 3 in training
+
 set.seed(175)
-train.index <- sample(c(1:650), 449, replace=FALSE) #455/650 = 70%
-train.index <- c(train.index,8, 125, 127, 128, 561, 564) # There are only two MCAR, so put 1 in training dataset; 5 UNKN so put 2 in training; 6 MFOR so put 3 in training
+
+train.index <- c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272) #1 for MCAR,3 MFOR, 3 MPHA.ln3, 2 MSEN-like MPHA, 10 for UNKN = 19
+train.index2 <- sample(setdiff(1:606,c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272)), 406, replace=FALSE) #425/606 = 70%: sample 417, excluding c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272)
+train.indices <- c(train.index, train.index2)
 
 # Split into training-test datasets
-train <- mad650_dapc_data[train.index,]
-test <- mad650_dapc_data[-train.index,]
+train <- mad606_dapc_data[train.indices,]
+test <- mad606_dapc_data[-train.indices,]
 
-# Use 6 PCs to fit training data & then use that to predict the test datasets. Finally get training coordinates
-pc6.fit <- lda(population ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6, data=train, na.action="na.omit", CV=F) # needed for predict step
-pc6.pred <- predict(object = pc6.fit, newdata = test)
+# Use 5 PCs to fit training data & then use that to predict the test datasets. Finally get training coordinates
+pc5.fit <- lda(population ~ PC1 + PC2 + PC3 + PC4 + PC5 , data=train, na.action="na.omit", CV=F) # needed for predict step
+pc5.pred <- predict(object = pc5.fit, newdata = test)
 
-pc6.train <- predict(object = pc6.fit, newdata = train)
+pc5.train <- predict(object = pc5.fit, newdata = train)
 
 # Extract eigenvalues (similar to PCA)
-eigenvalues_lda <- pc6.fit$svd^2
+eigenvalues_lda <- pc5.fit$svd^2
 
 # Calculate the proportion of variance explained by each linear discriminant
-variance_explained_lda <- eigenvalues_lda / sum(eigenvalues_lda)
+variance_explained_lda <- round((eigenvalues_lda / sum(eigenvalues_lda))*100,2)
 
 # Assess accuracy of the prediction
 # percent correct for each species
-table(pc6.pred$class, test$population) # correct assignment rate of test dataset (rows are 1st entry, columns are 2nd)
-ct1 <- table(pc6.pred$class, test$population)
+table(pc5.pred$class, test$population) # correct assignment rate of test dataset (rows are 1st entry, columns are 2nd)
+ct1 <- table(pc5.pred$class, test$population)
 diag(prop.table(ct1,1))
 
 # total percent correct
 sum(diag(prop.table(ct1)))
 
 # Assess accuracy of entire training-test dataset
-all.class <- as.factor(append(as.character(pc6.pred$class), as.character(pc6.train$class)))
-all.class.ordered <- factor(all.class, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN'))
+all.class <- as.factor(append(as.character(pc5.pred$class), as.character(pc5.train$class)))
+all.class.ordered <- factor(all.class, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MSEN-like MPHA", "MSEN", "UNKN"))
 all.pop <- as.factor(append(as.character(test$population), as.character(train$population)))
-all.pop.ordered <- factor(all.pop, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA-shallow', 'MPHA-deep', 'MPHA-very deep', 'MSEN', 'UNKN'))
+all.pop.ordered <- factor(all.pop, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MSEN-like MPHA", "MSEN", "UNKN"))
 
 ct2 <- table(all.class.ordered, all.pop.ordered)# correct assignment rate of training-test dataset
 diag(prop.table(ct2,1))
 sum(diag(prop.table(ct2)))
 
 #### Plot LDA ####
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/madracis650_dapc.png", width=10, height=9, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/madracis606_dapc.png", width=10, height=9, res=300, units="in")
 
 par(
   mar=c(4, 4, 3, 1), # panel margin size in "line number" units
@@ -146,14 +147,21 @@ par(
   par(mfrow = c(2,2))
 )
 
-plot(pc6.pred$x[,"LD1"], pc6.pred$x[,"LD2"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (77.3%)', ylab = 'LD2 (16.6%)', xlim = c(-100,10), ylim = c(-25,33))
-points(pc6.train$x[,"LD1"], pc6.train$x[,"LD2"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD2"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (50.3%)', ylab = 'LD2 (38.1%)', xlim = c(-40,20), ylim = c(-20,35))
+points(pc5.train$x[,"LD1"], pc5.train$x[,"LD2"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc6.pred$x[,"LD2"], pc6.pred$x[,"LD3"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (16.6%)', ylab = 'LD3 (4.1%)', xlim = c(-22,32), ylim = c(-4,7))
-points(pc6.train$x[,"LD2"], pc6.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (38.1%)', ylab = 'LD3 (7.2%)', xlim = c(-20,40), ylim = c(-35,10))
+points(pc5.train$x[,"LD2"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc6.pred$x[,"LD1"], pc6.pred$x[,"LD3"], col = add.alpha(colors_mpha[factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (77.3%)', ylab = 'LD3 (4.1%)', xlim = c(-100,20), ylim = c(-4,7))
-points(pc6.train$x[,"LD1"], pc6.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (50.3%)', ylab = 'LD3 (7.2%)', xlim = c(-40,20), ylim = c(-35,10))
+points(pc5.train$x[,"LD1"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+
+legend(-39,-10, 
+       legend = levels(factor(train$population)),
+       pch = 16,
+       col = add.alpha(colors_mpha, 0.7),
+       cex = 0.75,
+       bty = 'n')
 
 dev.off()
 

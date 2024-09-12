@@ -20,10 +20,10 @@ add.alpha <- function(col, alpha=1){
 ngsadmix_loglist <- list.files(here("WGS/angsd_results/madracis606/admixture/logs"), pattern = ".log", full.names = T)
 
 #use lapply to read in all our log files at once
-loglines <- lapply(1:70, FUN = function(i) readLines(ngsadmix_loglist[i]))
+loglines <- lapply(1:120, FUN = function(i) readLines(ngsadmix_loglist[i]))
 
 #this will pull out the line that starts with "b" from each file and return it as a list
-foundset <- sapply(1:70, FUN= function(x) loglines[[x]][which(str_sub(loglines[[x]], 1, 1) == 'b')])
+foundset <- sapply(1:120, FUN= function(x) loglines[[x]][which(str_sub(loglines[[x]], 1, 1) == 'b')])
 
 as.numeric( sub("\\D*(\\d+).*", "\\1", foundset) ) # this should extract the log likelihood
 
@@ -36,6 +36,11 @@ logs <- file[,3:4]
 
 # add to it our likelihood values
 logs$like<-as.vector(as.numeric( sub("\\D*(\\d+).*", "\\1", foundset) ))
+
+# Generate a two column text file (K, likelihood) for input into CLUMPAK
+for_clumpak <- sapply(str_split(logs$K, "K"), "[[",2)
+for_clumpak2 <- cbind(for_clumpak, logs$like)
+write.table(for_clumpak2, here("WGS/angsd_results/madracis606/admixture/likes_clumpak_input.txt"), quote = FALSE, col.names = FALSE, row.names = FALSE)
 
 # Calculate our delta K and probability
 bestK <- data.frame(

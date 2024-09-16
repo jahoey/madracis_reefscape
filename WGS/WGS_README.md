@@ -196,5 +196,5 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 
 ## Putting it all together into something beautiful
 26. Plot a big figure illustrating interspecific *Madracis* genetic diversity
-     * madracis_composite606_plot.R 
+     * [A_madracis_composite606_plot.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/A_madracis_composite606_plot.R)
 

@@ -75,8 +75,6 @@ eig_percent[1:10]
 pca <- ggplot(data = pca.vectors, aes(x=X1, y=X2, colour = metadata$species_mpha)) + geom_point()
 plot(pca)
 
-
-
 #### DAPC for 606 Madracis ####
 # Prepare dataframe for DAPC
 mad606_dapc_data <- cbind(ids$new_ID, metadata$species_mpha, data.frame(madracis.pca$vectors))
@@ -118,8 +116,7 @@ variance_explained_lda <- round((eigenvalues_lda / sum(eigenvalues_lda))*100,2)
 
 # Assess accuracy of the prediction
 # percent correct for each species
-table(pc5.pred$class, test$population) # correct assignment rate of test dataset (rows are 1st entry, columns are 2nd)
-ct1 <- table(pc5.pred$class, test$population)
+ct1 <- table(pc5.pred$class, test$population) # correct assignment rate of test dataset (rows are 1st entry, columns are 2nd)
 diag(prop.table(ct1,1))
 
 # total percent correct
@@ -135,7 +132,7 @@ ct2 <- table(all.class.ordered, all.pop.ordered)# correct assignment rate of tra
 diag(prop.table(ct2,1))
 sum(diag(prop.table(ct2)))
 
-#### Plot LDA ####
+#### Plot LDA as a scatterplot ####
 png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/madracis606_dapc.png", width=10, height=9, res=300, units="in")
 
 par(
@@ -147,10 +144,10 @@ par(
   par(mfrow = c(2,2))
 )
 
-plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD2"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (50.3%)', ylab = 'LD2 (38.1%)', xlim = c(-40,20), ylim = c(-20,35))
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD2"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (51.5%)', ylab = 'LD2 (38.7%)', xlim = c(-40,20), ylim = c(-20,35))
 points(pc5.train$x[,"LD1"], pc5.train$x[,"LD2"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (38.1%)', ylab = 'LD3 (7.2%)', xlim = c(-20,40), ylim = c(-35,10))
+plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (38.7%)', ylab = 'LD3 (5.5%)', xlim = c(-20,40), ylim = c(-35,10))
 points(pc5.train$x[,"LD2"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
 plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (50.3%)', ylab = 'LD3 (7.2%)', xlim = c(-40,20), ylim = c(-35,10))
@@ -163,5 +160,42 @@ legend(-39,-10,
        cex = 0.75,
        bty = 'n')
 
+plot(pc5.pred$x[,"LD3"], pc5.pred$x[,"LD4"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD3 (5.5%)', ylab = 'LD4 (2.9%)', xlim = c(-40,10), ylim = c(-25,15))
+points(pc5.train$x[,"LD3"], pc5.train$x[,"LD4"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+
 dev.off()
 
+#### Plot LDA as a barplot ####
+posterior_names <- rbind(test[,1:2], train[,1:2])
+posteriors <- rbind(pc5.pred$posterior, pc5.train$posterior) # join the group membership posteriors for the training and test datasets
+# row.names(posteriors) <- posterior_names
+posteriors2 <- as.data.frame(cbind(posterior_names, posteriors))
+rownames(posteriors2) <- posterior_names$individual
+
+# Set plotting order
+ord<-order(posteriors2$population)
+
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/madracis606_dapc_barplot.png", width=40, height=5, res=300, units="in")
+
+par(mar = c(0.5, 3.5, 0.5, 1),
+    mgp = c(3, 1, 0),
+    oma = c(10,3,0,1) +0.1,
+    xpd=NA)
+
+barplot(t(posteriors2)[3:12,ord], # dont use rows 1 and 2
+        col=colors_mpha,
+        cex.names = 0.3,
+        las=2,
+        space=0,
+        border=NA,
+        ylab="",
+        yaxt = 'n',
+        xaxt = 'n')
+
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(posteriors2$individual[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 7)
+
+axis(2, at=seq(0,1, by = 0.2), labels=seq(0,1, by= 0.2), line = -6, las = 2)
+mtext("membership probability", side = 2, line = -2)
+
+dev.off()

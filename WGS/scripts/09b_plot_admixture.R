@@ -494,6 +494,9 @@ for (i in 1:10) {
   mtext(paste(q10_rep$V3[i], q10_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
 
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
+
 # Loop over the 10 slices of the array for K11
 for (i in 1:10) {
   # Generate the barplot for the i-th slice
@@ -510,6 +513,9 @@ for (i in 1:10) {
   axis(2, at=seq(0,1, by = 0.2), labels=seq(0,1, by= 0.2), line = -7, las = 2)
   mtext(paste(q11_rep$V3[i], q11_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
+
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
 
 # Loop over the 10 slices of the array for K12
 for (i in 1:10) {
@@ -528,6 +534,9 @@ for (i in 1:10) {
   mtext(paste(q12_rep$V3[i], q12_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
 
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
+
 # Loop over the 10 slices of the array for K13
 for (i in 1:10) {
   # Generate the barplot for the i-th slice
@@ -544,6 +553,9 @@ for (i in 1:10) {
   axis(2, at=seq(0,1, by = 0.2), labels=seq(0,1, by= 0.2), line = -7, las = 2)
   mtext(paste(q13_rep$V3[i], q13_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
+
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
 
 # Loop over the 10 slices of the array for K14
 for (i in 1:10) {
@@ -562,6 +574,9 @@ for (i in 1:10) {
   mtext(paste(q14_rep$V3[i], q14_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
 
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
+
 # Loop over the 10 slices of the array for K15
 for (i in 1:10) {
   # Generate the barplot for the i-th slice
@@ -578,6 +593,9 @@ for (i in 1:10) {
   axis(2, at=seq(0,1, by = 0.2), labels=seq(0,1, by= 0.2), line = -7, las = 2)
   mtext(paste(q15_rep$V3[i], q15_rep$V4[i], sep = '_'), side = 2, line = -4)
 }
+
+axis(1, at=seq(0.5,605.5, by=1), labels=paste(ids$new_ID[ord]), line = 0.5, las = 2, cex.axis = 0.3)
+mtext("Individual", side = 1, line = 6)
 
 # Loop over the 10 slices of the array for K16
 for (i in 1:10) {

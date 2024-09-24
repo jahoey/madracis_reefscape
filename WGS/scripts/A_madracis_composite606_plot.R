@@ -53,39 +53,8 @@ madracis_clusters_k9 <- read.delim(here("WGS/angsd_results/madracis606/admixture
 # Cluster assignments (from nsgadmix K=10)
 madracis_clusters_k10 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K10_6_out.qopt"), header = FALSE, sep = "", col.names = c("cluster7", "cluster6", "cluster8", "cluster5", "cluster3", "cluster1", "cluster4", "cluster9", "cluster10", "cluster2"))
 
-# # Cluster assignments (from nsgadmix K=11)
-# madracis_clusters_k11 <- read.delim(here("admixture_results/madracis650/qfiles/K11/madracis650_ngsAdmix_K11_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster1", "cluster8", "cluster6", "cluster5", "cluster10", "cluster3", "cluster11", "cluster4", "cluster2", "cluster9", "cluster7", "extra"))
-# madracis_clusters_k11 <- madracis_clusters_k11[,-12]
-# 
-# # Cluster assignments (from nsgadmix K=12)
-# madracis_clusters_k12 <- read.delim(here("admixture_results/madracis650/qfiles/K12/madracis650_ngsAdmix_K12_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster5", "cluster7", "cluster8", "cluster12", "cluster9", "cluster1", "cluster10", "cluster4", "cluster3", "cluster2", "cluster6", "cluster11", "extra"))
-# madracis_clusters_k12 <- madracis_clusters_k12[,-13]
-# 
-# # Cluster assignments (from nsgadmix K=13)
-# madracis_clusters_k13 <- read.delim(here("admixture_results/madracis650/qfiles/K13/madracis650_ngsAdmix_K13_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster9", "cluster1", "cluster8", "cluster2", "cluster3", "cluster5", "cluster7", "cluster4", "cluster12", "cluster6", "cluster11", "cluster10", "cluster13", "extra"))
-# madracis_clusters_k13 <- madracis_clusters_k13[,-14]
-# 
-# # Cluster assignments (from nsgadmix K=14)
-# madracis_clusters_k14 <- read.delim(here("admixture_results/madracis650/qfiles/K14/madracis650_ngsAdmix_K14_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster8", "cluster6", "cluster9", "cluster5", "cluster1", "cluster7", "cluster3", "cluster4", "cluster2", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "extra"))
-# madracis_clusters_k14 <- madracis_clusters_k14[,-15]
-# 
-# # Cluster assignments (from nsgadmix K=15)
-# madracis_clusters_k15 <- read.delim(here("admixture_results/madracis650/qfiles/K15/madracis650_ngsAdmix_K15_1_out.qopt"), header = FALSE, sep = " ", col.names = c("cluster8", "cluster6", "cluster9", "cluster5", "cluster1", "cluster7", "cluster3", "cluster4", "cluster2", "cluster10", "cluster11", "cluster12", "cluster13", "cluster14", "cluster15", "extra"))
-# madracis_clusters_k15 <- madracis_clusters_k15[,-16]
-
 # DAPC results
-# madracis_dapc <- read.csv(here("data/dapc_results.csv"), header = FALSE, col.names = c("sample_full", "sample", "sample2", "species", "dapc_unsup"))
-# load(here("results/dapc_k5.RData")) # K5
-# load(here("results/dapc_k6.RData")) # K6
-# load(here("results/dapc_k7.RData")) # K7
-
-# Modify column names so that colors match later
-# colnames(dapc1$posterior) <- c("1", "2", "3", "4", "5")
-# colnames(dapc2$posterior) <- c("4", "2", "6", "1", "3", "5")
-# colnames(dapc3$posterior) <- c("3", "2", "4", "7", "6", "5", "1")
-
-# Symbiont data
-
+madracis_dapc_pc5_post <- read.delim(here('WGS/angsd_results/madracis606/madracis606_dapc_5pcs_posteriors.txt'), header = TRUE, sep = '\t')
 
 #### Option 1: Load bam names to assign species ####
 # bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list_653.txt"), header = FALSE, sep = '\t', col.names = c('path'))
@@ -148,11 +117,6 @@ madracis_clusters_k7 <- cbind(ids$new_ID, madracis_clusters_k7)
 madracis_clusters_k8 <- cbind(ids$new_ID, madracis_clusters_k8)
 madracis_clusters_k9 <- cbind(ids$new_ID, madracis_clusters_k9)
 madracis_clusters_k10 <- cbind(ids$new_ID, madracis_clusters_k10)
-# madracis_clusters_k11 <- cbind(ids2$new_ID, madracis_clusters_k11)
-# madracis_clusters_k12 <- cbind(ids2$new_ID, madracis_clusters_k12)
-# madracis_clusters_k13 <- cbind(ids2$new_ID, madracis_clusters_k13)
-# madracis_clusters_k14 <- cbind(ids2$new_ID, madracis_clusters_k14)
-# madracis_clusters_k15 <- cbind(ids2$new_ID, madracis_clusters_k15)
 
 #### Data manipulation ####
 # Reroot M. senaria?
@@ -204,15 +168,9 @@ madracis_k7_melt <- melt(madracis_clusters_k7)
 madracis_k8_melt <- melt(madracis_clusters_k8)
 madracis_k9_melt <- melt(madracis_clusters_k9)
 madracis_k10_melt <- melt(madracis_clusters_k10)
-# madracis_k11_melt <- melt(madracis_clusters_k11)
-# madracis_k12_melt <- melt(madracis_clusters_k12)
-# madracis_k13_melt <- melt(madracis_clusters_k13)
-# madracis_k14_melt <- melt(madracis_clusters_k14)
-# madracis_k15_melt <- melt(madracis_clusters_k15)
 
 # Format DAPC data for ggplot
-# madracis_dapc_k5_melt <- melt(dapc1$posterior)
-# madracis_dapc_k6_melt <- melt(dapc2$posterior)
+madracis_dapc_pc5_post_melt <- melt(madracis_dapc_pc5_post)
 
 # Prepare site categories
 species.table$site[which(species.table$site == 'buy')] <- 1 #buoy1
@@ -236,7 +194,8 @@ colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23
 show_col(colors_mpha)
 
 # For STRUCTURE plots
-colors_struc <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", "#0D0887FF", "#5402A3FF", "lightblue")
+# colors_struc <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", "#0D0887FF", "#5402A3FF", "lightblue")
+colors_struc <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", "#0D0887FF", "#5402A3FF", "lightblue", "#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70")
 # c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02", "#A6761D", plasma(8))
 show_col(colors_struc)
 
@@ -288,28 +247,35 @@ p7 <- facet_plot(p6, panel="z.structure f10", data=madracis_k10_melt,
                  mapping = aes(x = value, fill = as.factor(variable)),
                  stat='identity')
 
-p8 <- facet_plot(p7, panel="zz.site", data=species.table2,
+p8 <- facet_plot(p7, panel="zz.dapc", data=madracis_dapc_pc5_post_melt,
+                geom=geom_barh, width = 1.0,
+                mapping = aes(x = value, fill = as.factor(variable)),
+                stat='identity')
+
+p9 <- facet_plot(p8, panel="zz.site", data=species.table2,
                  geom = geom_point, aes(x = rev(as.numeric(species.table2$site)), color = rep(NA, 606)), shape = 15, size=2, show.legend = F) # use dataframe reordered by rerooted tree
 
-p9 <- facet_plot(p8, panel="zzz.<10, 11-20, 21-40, 41-60, 60+", data=species.table2,
+p10 <- facet_plot(p9, panel="zzz.<10, 11-20, 21-40, 41-60, 60+", data=species.table2,
            geom = geom_point, aes(x = rev(as.numeric(species.table2$depth)), color = rep(NA,606)),shape = 7, size=2, show.legend = F) # use dataframe reordered by rerooted tree
 
-p10 <- facet_labeller(p9, label = c('Tree' = 'tree', 'z.structure a5'= 'k5', 'z.structure b6'= 'k6', 'z.structure c7'= 'k7', 'z.structure d8'= 'k8', 'z.structure e9'= 'k9', 'z.structure f10'= 'k10', 'zz.site'= 'Site', 'zzz.<10, 11-20, 21-40, 41-60, 60+'= 'Depth'))
+p11 <- facet_labeller(p10, label = c('Tree' = 'tree', 'z.structure a5'= 'k5', 'z.structure b6'= 'k6', 'z.structure c7'= 'k7', 'z.structure d8'= 'k8', 'z.structure e9'= 'k9', 'z.structure f10'= 'k10', 'zz.dapc' = 'DAPC', 'zz.site' = 'Site', 'zzz.<10, 11-20, 21-40, 41-60, 60+'= 'Depth'))
 
 # Change the width of the individual facet_plot panels
-gt <- ggplot_gtable(ggplot_build(p10))
-gt$widths[5] <- 0.3*gt$widths[5] #tree
-gt$widths[7] <- 0.08*gt$widths[7] #k5
+gt <- ggplot_gtable(ggplot_build(p11))
+# gt$widths[5] <- 0.3*gt$widths[5] #tree
+gt$widths[7] <- 0.3*gt$widths[7] #k5
 gt$widths[9] <- 0.08*gt$widths[9]
 gt$widths[11] <- 0.08*gt$widths[11]
 gt$widths[13] <- 0.08*gt$widths[13] 
 gt$widths[15] <- 0.08*gt$widths[15]
 gt$widths[17] <- 0.08*gt$widths[17] #k10
-gt$widths[19] <- 0.2*gt$widths[19] #site
-gt$widths[21] <- 0.2*gt$widths[21] #depth
+gt$widths[19] <- 0.08*gt$widths[19] #dapc?
+gt$widths[21] <- 0.08*gt$widths[21] #site/dapc?
+gt$widths[23] <- 0.2*gt$widths[23] #site/depth?
+gt$widths[25] <- 0.2*gt$widths[25] #depth?
 grid.draw(gt)
 
-ggsave(gt,file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/figures/madracis606_composite.png", width = 35, height = 130, units = "cm", limitsize = FALSE)
+ggsave(gt,file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/figures/madracis606_composite.png", width = 38, height = 130, units = "cm", limitsize = FALSE)
 
 
 

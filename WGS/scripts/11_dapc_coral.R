@@ -150,7 +150,7 @@ points(pc5.train$x[,"LD1"], pc5.train$x[,"LD2"], col = add.alpha(colors_mpha[fac
 plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (38.7%)', ylab = 'LD3 (5.5%)', xlim = c(-20,40), ylim = c(-35,10))
 points(pc5.train$x[,"LD2"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (50.3%)', ylab = 'LD3 (7.2%)', xlim = c(-40,20), ylim = c(-35,10))
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (51.5%)', ylab = 'LD3 (5.5%)', xlim = c(-40,20), ylim = c(-35,10))
 points(pc5.train$x[,"LD1"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
 legend(-39,-10, 
@@ -160,8 +160,8 @@ legend(-39,-10,
        cex = 0.75,
        bty = 'n')
 
-plot(pc5.pred$x[,"LD3"], pc5.pred$x[,"LD4"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD3 (5.5%)', ylab = 'LD4 (2.9%)', xlim = c(-40,10), ylim = c(-25,15))
-points(pc5.train$x[,"LD3"], pc5.train$x[,"LD4"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
+# plot(pc5.pred$x[,"LD3"], pc5.pred$x[,"LD4"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD3 (5.5%)', ylab = 'LD4 (2.9%)', xlim = c(-40,10), ylim = c(-25,15))
+# points(pc5.train$x[,"LD3"], pc5.train$x[,"LD4"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
 dev.off()
 
@@ -171,6 +171,7 @@ posteriors <- rbind(pc5.pred$posterior, pc5.train$posterior) # join the group me
 # row.names(posteriors) <- posterior_names
 posteriors2 <- as.data.frame(cbind(posterior_names, posteriors))
 rownames(posteriors2) <- posterior_names$individual
+write.table(posteriors2, here('WGS/angsd_results/madracis606/madracis606_dapc_5pcs_posteriors.txt'), quote = FALSE, sep = '\t', row.names = FALSE) # write text file that contains DAPC posterior values so that it can be used for the big composite plot
 
 # Set plotting order
 ord<-order(posteriors2$population)

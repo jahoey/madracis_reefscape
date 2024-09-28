@@ -42,16 +42,17 @@ madracis_clusters_k5 <- read.delim(here("WGS/angsd_results/madracis606/admixture
 madracis_clusters_k6 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K6_5_out.qopt"), header = FALSE, sep = "", col.names = c("cluster3", "cluster1", "cluster5", "cluster6", "cluster4", "cluster2"))
 
 # Cluster assignments (from nsgadmix K=7)
-madracis_clusters_k7 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K7_9_out.qopt"), header = FALSE, sep = "", col.names = c("cluster7", "cluster5", "cluster1", "cluster6", "cluster2", "cluster4", "cluster3"))
+# madracis_clusters_k7 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K7_9_out.qopt"), header = FALSE, sep = "", col.names = c("cluster7", "cluster5", "cluster1", "cluster6", "cluster2", "cluster4", "cluster3"))
+madracis_clusters_k7 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K7_2_out.qopt"), header = FALSE, sep = "", col.names = c("cluster7", "cluster4", "cluster1", "cluster3", "cluster6", "cluster5", "cluster2"))
 
 # Cluster assignments (from nsgadmix K=8)
-madracis_clusters_k8 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K8_3_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster8", "cluster5", "cluster6", "cluster1", "cluster3", "cluster7", "cluster4"))
+madracis_clusters_k8 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K8_3_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster7", "cluster5", "cluster6", "cluster1", "cluster3", "cluster8", "cluster4"))
 
 # # Cluster assignments (from nsgadmix K=9)
-madracis_clusters_k9 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K9_9_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster5", "cluster6", "cluster8", "cluster4", "cluster7", "cluster9", "cluster3", "cluster1"))
+madracis_clusters_k9 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K9_9_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster5", "cluster6", "cluster7", "cluster4", "cluster8", "cluster9", "cluster3", "cluster1")) # lots of different topologies across the reps
 
 # Cluster assignments (from nsgadmix K=10)
-madracis_clusters_k10 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K10_6_out.qopt"), header = FALSE, sep = "", col.names = c("cluster7", "cluster6", "cluster8", "cluster5", "cluster3", "cluster1", "cluster4", "cluster9", "cluster10", "cluster2"))
+madracis_clusters_k10 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K10_6_out.qopt"), header = FALSE, sep = "", col.names = c("cluster8", "cluster6", "cluster7", "cluster5", "cluster3", "cluster1", "cluster4", "cluster9", "cluster10", "cluster2"))
 
 # DAPC results
 madracis_dapc_pc5_post <- read.delim(here('WGS/angsd_results/madracis606/madracis606_dapc_5pcs_posteriors.txt'), header = TRUE, sep = '\t')

@@ -24,7 +24,7 @@ add.alpha <- function(col, alpha=1){
 pcangsd_coral606_unlinked <- as.matrix(read.table(here("WGS/angsd_results/madracis606/PCAngsd_madracis606_unlinkedsnps_covmat.cov"), header = F)) # This is the covariance matrix created by pcangsd using minMaf 0.05 default
 
 # Load id names to assign metadata
-ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606.csv"), header = TRUE) # This is 606 colonies, clones removed
+ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2024.csv"), header = TRUE) # This is 606 colonies, clones removed
 
 metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
 colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
@@ -32,7 +32,7 @@ metadata $id_original <- paste(metadata[,4], metadata[,5], sep = "_")
 metadata$depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting gets very weird
 
 # Get cluster assignments for coloring the points
-data_cluster <- read.csv(here("madracis_master_merged_May2024.csv"), header = TRUE)
+data_cluster <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
 
 metadata$species_mpha <- data_cluster[match(metadata$id_original, data_cluster$ID), 7]
 
@@ -46,14 +46,14 @@ metadata$species_mpha[is.na(metadata$species_mpha)] <- metadata$species[species_
 # species_mpha[which(species == 'MPHA' & depth >20 & depth <=60)] <- "MPHA-deep" # MPHA at depths between 20-60
 metadata$species_mpha[which(metadata$species == 'MPHA' & metadata$depth >60)] <- "MPHA.ln3" # MPHA at depths >60
 
-# Deal with the MPHAs, which are mostly MSEN-like MPHAs
+# Deal with the Pim MPHAs, which are mostly MSEN-like MPHAs (MPHA.ln4)
 metadata[which(metadata$id_original == 'PB_4583'),8] <- 'MPHA.ln2'
-metadata[which(metadata$id_original == 'PB_4578'),8] <- 'MSEN-like MPHA'
-metadata[which(metadata$id_original == 'PB_4577'),8] <- 'MSEN-like MPHA'
-metadata[which(metadata$id_original == 'PB_4576'),8] <- 'MSEN-like MPHA'
-metadata[which(metadata$id_original == 'PB_4579'),8] <- 'MSEN-like MPHA'
+metadata[which(metadata$id_original == 'PB_4578'),8] <- 'MPHA.ln4'
+metadata[which(metadata$id_original == 'PB_4577'),8] <- 'MPHA.ln4'
+metadata[which(metadata$id_original == 'PB_4576'),8] <- 'MPHA.ln4'
+metadata[which(metadata$id_original == 'PB_4579'),8] <- 'MPHA.ln4'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN-like MPHA', 'MSEN', 'UNKN')) #reorder the species factors
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MPHA.ln4', 'MSEN', 'UNKN')) #reorder the species factors
 
 # Set color scheme
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8"
@@ -94,8 +94,8 @@ n <- 5 # the number of principal components to use for discriminant analysis
 
 set.seed(175)
 
-train.index <- c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272) #1 for MCAR,3 MFOR, 3 MPHA.ln3, 2 MSEN-like MPHA, 10 for UNKN = 19
-train.index2 <- sample(setdiff(1:606,c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272)), 406, replace=FALSE) #425/606 = 70%: sample 417, excluding c(586,112,114,442,301,302,303,294,296,145,116,258,239,474,328,233,147,1,272)
+train.index <- c(586,112,114,442,301,302,303,200,293,444,471,513) #1 for MCAR,3 MFOR, 3 MPHA.ln3, 4 MPHA.ln4, 1 for UNKN = 12
+train.index2 <- sample(setdiff(1:606,c(586,112,114,442,301,302,303,200,293,444,471,513)), 413, replace=FALSE) #425/606 = 70%: sample 417, excluding c(586,112,114,442,301,302,303,200,293,444,471,513)
 train.indices <- c(train.index, train.index2)
 
 # Split into training-test datasets
@@ -124,9 +124,9 @@ sum(diag(prop.table(ct1)))
 
 # Assess accuracy of entire training-test dataset
 all.class <- as.factor(append(as.character(pc5.pred$class), as.character(pc5.train$class)))
-all.class.ordered <- factor(all.class, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MSEN-like MPHA", "MSEN", "UNKN"))
+all.class.ordered <- factor(all.class, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MPHA.ln4", "MSEN", "UNKN"))
 all.pop <- as.factor(append(as.character(test$population), as.character(train$population)))
-all.pop.ordered <- factor(all.pop, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MSEN-like MPHA", "MSEN", "UNKN"))
+all.pop.ordered <- factor(all.pop, levels = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln3", "MPHA.ln4", "MSEN", "UNKN"))
 
 ct2 <- table(all.class.ordered, all.pop.ordered)# correct assignment rate of training-test dataset
 diag(prop.table(ct2,1))
@@ -144,16 +144,16 @@ par(
   par(mfrow = c(2,2))
 )
 
-plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD2"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (51.5%)', ylab = 'LD2 (38.7%)', xlim = c(-40,20), ylim = c(-20,35))
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD2"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (40.7%)', ylab = 'LD2 (33.6%)', xlim = c(-25,55), ylim = c(-40,40))
 points(pc5.train$x[,"LD1"], pc5.train$x[,"LD2"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (38.7%)', ylab = 'LD3 (5.5%)', xlim = c(-20,40), ylim = c(-35,10))
+plot(pc5.pred$x[,"LD2"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD2 (33.6%)', ylab = 'LD3 (19.2%)', xlim = c(-40,40), ylim = c(-35,25))
 points(pc5.train$x[,"LD2"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (51.5%)', ylab = 'LD3 (5.5%)', xlim = c(-40,20), ylim = c(-35,10))
+plot(pc5.pred$x[,"LD1"], pc5.pred$x[,"LD3"], col = add.alpha(colors_mpha[-1][factor(test$population)], 0.7), pch = 16, xlab = 'LD1 (40.7%)', ylab = 'LD3 (19.2%)', xlim = c(-25,55), ylim = c(-35,25))
 points(pc5.train$x[,"LD1"], pc5.train$x[,"LD3"], col = add.alpha(colors_mpha[factor(train$population)], 0.7), pch = 16)
 
-legend(-39,-10, 
+legend(37,-2, 
        legend = levels(factor(train$population)),
        pch = 16,
        col = add.alpha(colors_mpha, 0.7),

@@ -222,13 +222,23 @@ tree_reroot_names2 <- get_taxa_name(p1.2) # get exact tip order of reordered tre
 
 species.table3 <- species.table2[match(tree_reroot_names2, species.table2$sample_full),] # order data by new exact tip order
 
-species.table3$depth <- species.table3$depth + 10 # turning sites into numbers is causing a conflict between 5 as depth and 5 as a site number, so I have to be clever about how I deal with this
+# Prepare depth categories so that they are evenly spaced
+species.table3$depth[which(species.table3$depth == 5)] <- 9 # 5m
+species.table3$depth[which(species.table3$depth == 10)] <- 10 # 10m
+species.table3$depth[which(species.table3$depth == 20)] <- 11 # 20m
+species.table3$depth[which(species.table3$depth == 40)] <- 12 # 40m
+species.table3$depth[which(species.table3$depth == 50)] <- 13 # 50m
+species.table3$depth[which(species.table3$depth == 60)] <- 14 # 60m
+species.table3$depth[which(species.table3$depth == 80)] <- 15 # 80m
+species.table3$depth[which(species.table3$depth == 90)] <- 16 # 90m
+# Otherwise the depths are interpreted numerically
+# species.table3$depth <- species.table3$depth + 10 # turning sites into numbers is causing a conflict between 5 as depth and 5 as a site number, so I have to be clever about how I deal with this
 
 heatmap_data <- cbind.data.frame(species.table3$sample_full, species.table3$site, species.table3$depth)
 colnames(heatmap_data) <- c('sample_full', 'site', 'depth')
 rownames(heatmap_data) <- species.table3$sample_full
-# heatmap_data$site <- as.numeric(factor(heatmap_data$site)) # for Method 1 only
-heatmap_data$depth <- as.factor(heatmap_data$depth) # for Method 2 only
+heatmap_data$site <- as.numeric(factor(heatmap_data$site)) # for Method 1 only
+# heatmap_data$depth <- as.factor(heatmap_data$depth) # for Method 2 only
 
 p2 <- p1.2 + new_scale_fill()
 
@@ -255,11 +265,11 @@ p2.b <-  p2.a +
   scale_color_manual(values=c(colors_all)) 
 
 # Method 2
-p2.1 <- gheatmap(p2, heatmap_data[,-1], offset=0, width=0.5, colnames = FALSE) +
-        scale_fill_manual(values = c("#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6", "#2171B5", "#08519C", "#08306B", "#DCE318FF", "#B8DE29FF", "#74D055FF", "#20A386FF", "#238A8DFF", "#2D718EFF", "#453781FF", "#481568FF")) # cannot have the samples names, for whichever reason
+# p2.1 <- gheatmap(p2, heatmap_data[,-1], offset=0, width=0.5, colnames = FALSE) +
+#         scale_fill_manual(values = c("#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6", "#2171B5", "#08519C", "#08306B", "#DCE318FF", "#B8DE29FF", "#74D055FF", "#20A386FF", "#238A8DFF", "#2D718EFF", "#453781FF", "#481568FF")) # cannot have the samples names, for whichever reason
 
 #### Plot the rest of the genetic data ####
-p3 <- p2.1 + new_scale_fill() # depending on metadata visualization method, either p2.1 or p2.b
+p3 <- p2.b + new_scale_fill() # depending on metadata visualization method, either p2.1 or p2.b
 p3.1 <- facet_plot(p3, panel= "z.structure a6", data=madracis_k6_melt,
                  geom=geom_barh, width = 1.0,
                  mapping = aes(x = value, fill = as.factor(variable)),

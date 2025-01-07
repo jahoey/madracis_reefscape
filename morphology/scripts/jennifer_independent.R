@@ -41,11 +41,10 @@ generate_label_df <- function(TUKEY, variable){
   return(Tukey.labels)
 }
 
-
 #### Read in Nelly's & genotyped data ####
-data <- read.delim(here("Nelly_data_May2024_updatedspeciesMPHA_rescaled.csv"), header = TRUE, sep = ',') #691 x 44
+data <- read.delim(here("morphology/data/Nelly_data_May2024_updatedspeciesMPHA_rescaled.csv"), header = TRUE, sep = ',') #691 x 44
 
-jah <- read.delim("~/Documents/CalAcademy_postdoc/Analyses/madracis_WGS/angsd_results/bam_lists/ids_recoded672.csv", header = TRUE, sep = ',') #672 x 3
+jah <- read.delim("~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/bam_lists/ids_recoded672.csv", header = TRUE, sep = ',') #672 x 3
 
 # Extract metadata from filenames
 names <- jah$new_ID
@@ -120,7 +119,7 @@ septa.and.icdist.by.species <- aggregate(list(septa = septa.and.icdist.trimmed$M
 
 #### Visualizing data: Scatterplots & boxplots ####
 # colors_mpha <- c("#ff6347", "#ff9a81", "#32a852", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #use when all of Nelly's dat are used for extra MPHA group
-colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #for genotyped data only
+colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70") #for genotyped data only
 show_col(colors_mpha)
 
 # Yellow ruler vs white square
@@ -241,7 +240,7 @@ TUKEY <- TukeyHSD(aov(ic.white.lm))
 
 plot(TUKEY)
 
-png(file=here("ic_dist_white_geno.png"), width=8, height=6, res=300, units="in")
+png(file=here("morphology/figures/ic_dist_white_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
 a <- boxplot(ic.dist.trimmed.white$Mean_IC ~ ic.dist.trimmed.white$Species_mpha, col = colors_mpha, ylim = c(0.4,2.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
@@ -320,7 +319,7 @@ TUKEY2 <- TukeyHSD(aov(ic.yellow.lm))
 
 plot(TUKEY2)
 
-png(file=here("ic_dist_yellow_quality_geno.png"), width=8, height=6, res=300, units="in")
+png(file=here("morphology/figures/ic_dist_yellow_quality_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
 b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha, ylim = c(0.8,3.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
@@ -380,7 +379,7 @@ TUKEY3 <- TukeyHSD(aov(ic.white.quality.lm))
 
 plot(TUKEY3)
 
-png(file=here("ic_dist_white_quality_geno.png"), width=8, height=6, res=300, units="in")
+png(file=here("morphology/figures/ic_dist_white_quality_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
 c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = 'Species', ylab = 'Average Intercorallite Distance', ylim = c(0.8, 2.8), outline = FALSE)
@@ -407,7 +406,7 @@ text( c(1:7) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
 dev.off()
 
 # Plot combination plot of IC distance split by quality yellow ruler and quality white squares
-png(file=here("ic_dist_yellow vs_quality_white_geno.png"), width=9, height=5, res=300, units="in")
+png(file=here("morphology/figures/ic_dist_yellow vs_quality_white_geno.png"), width=9, height=5, res=300, units="in")
 
 par(
   mar=c(5, 4, 2, 0.5), # panel margin size in "line number" units
@@ -430,7 +429,7 @@ text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), # "MPHA"
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), # "MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -468,7 +467,7 @@ text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), #"MPHA"
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -528,7 +527,7 @@ TUKEY4 <- TukeyHSD(aov(septa.lm))
 
 plot(TUKEY4)
 
-png(file=here(here("plots/septa_geno.png")), width=9, height=5, res=300, units="in")
+png(file=here(here("morphology/figures/septa_geno.png")), width=8, height=6, res=300, units="in")
 
 par(
   mar=c(5, 4, 2, 0.5), # panel margin size in "line number" units
@@ -537,7 +536,7 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14, # point size, which is the font size
   bty = 'n',
-  mfrow = c(1,2)
+  mfrow = c(1,1)
 )
 
 # Basic boxplot
@@ -547,11 +546,11 @@ mtext("Species", side = 1, line = 4)
 axis(2, las = 2)
 mtext("Average Septa Count", side = 2, line = 3)
 
-text(x = 1:6,
+text(x = 1:7,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.4,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN","UNKN"), #"MPHA"
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN","UNKN"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -576,7 +575,7 @@ LABELS4 <- generate_label_df(TUKEY4 , "septa.trimmed$Species_mpha")
 over <- 0.15*max( d$stats[nrow(d$stats),] )
 
 #Add the labels
-text( c(1:6) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
+text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
 
 dev.off()
 

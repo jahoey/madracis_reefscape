@@ -3,7 +3,7 @@ library(stringr)
 library(scales)
 library(RColorBrewer)
 
-ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct20.csv"), header = TRUE) # 606 Madracis, no clones
+ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2024.csv"), header = TRUE) # 606 Madracis, no clones
 
 metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
 colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
@@ -53,7 +53,7 @@ for (i in 1:ncol(speciesbydepth)) {
 }
 
 #### Plot ####
-# Barchart
+# Barchart by proportion
 png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/species_prop_by_depth_bar.png", width=11, height=8.5, res=300, units="in")
 
 par(
@@ -89,6 +89,51 @@ for (j in 1:ncol(speciesbydepth_percents)) {
 
 dev.off()
 
+# Barchart by absolute count
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/species_count_by_depth_bar.png", width=4, height=18, res=300, units="in")
+
+par(
+  #mar=c(3, 4, 2, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(8,1))
+
+# Define a layout with equal panel heights but adjust space for the last plot
+layout_matrix <- matrix(1:ncol(speciesbydepth), ncol = 1)
+layout(layout_matrix, heights = c(rep(1, ncol(speciesbydepth) - 1), 1.2)) # Larger height for the last plot
+
+for (j in 1:ncol(speciesbydepth)) {
+  
+  # Adjust margins for the last plot
+  if (j == ncol(speciesbydepth)) {
+    par(mar = c(6, 4, 2, 1)) # Increased bottom margin
+  } else {
+    par(mar = c(2, 4, 2, 1)) # Default margin for other plots
+  }
+  
+  barplot(height=as.matrix(t(speciesbydepth))[j,], names=rownames(speciesbydepth), col = colors_mpha, xlab = '', ylab = 'Count', ylim = c(0,80), xaxt = 'n', las = 2)
+  mtext(paste(colnames(speciesbydepth)[j], 'meters', sep = ' '), side=3, adj = 0, line = 0.7)
+}
+
+text(x = c(0.7, 1.9, 3.1, 4.3, 5.5, 6.7, 7.9, 9.1, 10.3, 11.5),
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 10,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3", "MPHA.ln4","MSEN", "UNKN"), # "MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+mtext('Species', side = 1, line = 5)
+
+dev.off()
+
 #### Figure out counts/percentages for depths for a given species
 # For a species, what is the depths at which they occur?
 count_by_species <- as.vector(rowSums(speciesbydepth)) # number of corals of each species
@@ -103,7 +148,7 @@ for (i in 1:nrow(speciesbydepth)) {
 
 #### Plot ####
 # Barplot
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_bar.png", width=11, height=8.5, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_bar.png", width=2, height=15, res=300, units="in")
 
 par(
   mar=c(4, 4, 3, 1), # panel margin size in "line number" units
@@ -112,15 +157,15 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14, # point size, which is the font size
   bty = 'n',
-  mfrow = c(4,3))
+  mfrow = c(10,1))
 
 for (j in 1:nrow(depthbyspecies)) {
-  barplot(height=as.matrix(depthbyspecies[j,]), names=colnames(depthbyspecies), xlab = 'Depth', ylab = 'Proportion', main = paste(rownames(depthbyspecies)[j], sep = ''), col = colors_mpha[j], ylim = c(0,1))
+  barplot(height=as.matrix(depthbyspecies[j,]), names=colnames(depthbyspecies), xlab = 'Depth', ylab = 'Proportion', main = paste(rownames(depthbyspecies)[j], ' (n =', rowSums(speciesbydepth)[j], ')', sep = ''), col = colors_mpha[j], ylim = c(0,1))
 }
 
 dev.off()
 
-# Pie chart
+d# Pie chart
 png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_pie.png", width=9, height=7, res=300, units="in")
 
 par(

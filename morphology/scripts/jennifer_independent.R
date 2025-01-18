@@ -794,6 +794,118 @@ mtext('Species', side = 1, line = 5)
 
 dev.off()
 
+#### All septa data broken out by depth ####
+septa.trimmed$Species_mpha <- factor(septa.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN", "UNKN"))
+
+septa.trimmed.5 <- septa.trimmed[which(septa.trimmed$Depth == 5),]
+septa.trimmed.10 <- septa.trimmed[which(septa.trimmed$Depth == 10),]
+septa.trimmed.20 <- septa.trimmed[which(septa.trimmed$Depth == 20),]
+septa.trimmed.40 <- septa.trimmed[which(septa.trimmed$Depth == 40),]
+septa.trimmed.60 <- septa.trimmed[which(septa.trimmed$Depth == 60),]
+
+png(file=here(here("morphology/figures/septa_all_by_depth_geno.png")), width=4, height=11.25, res=300, units="in")
+
+par(
+  mar=c(2, 6, 2, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(5,1)
+)
+
+# Define a layout with equal panel heights but adjust space for the last plot
+layout_matrix <- matrix(1:5, ncol = 1)
+layout(layout_matrix, heights = c(rep(1, 5 - 1), 1.2)) # Larger height for the last plot
+
+g1 <- boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed.5, col = colors_mpha, ylim = c(5,12), outline = FALSE, xlab = '', ylab = 'Number of septa protruding \n through tissue', xaxt = 'n', las = 2)
+axis(1, labels = FALSE)
+mtext("5 meters", side=3, adj = 0, line = 0.7)
+
+# Points
+stripchart(septa.trimmed.5$Mean_Septa ~ septa.trimmed.5$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+g2 <- boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed.10, col = colors_mpha, ylim = c(5,12), outline = FALSE, xlab = '', ylab = 'Number of septa protruding \n through tissue', xaxt = 'n', las = 2)
+axis(1, labels = FALSE)
+mtext("10 meters", side=3, adj = 0, line = 0.7)
+
+# Points
+stripchart(septa.trimmed.10$Mean_Septa ~ septa.trimmed.10$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+g3 <- boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed.20, col = colors_mpha, ylim = c(5,12), outline = FALSE, xlab = 'Species', ylab = 'Number of septa protruding \n through tissue', xaxt = 'n', las = 2)
+axis(1, labels = FALSE)
+mtext("20 meters", side=3, adj = 0, line = 0.7)
+
+# Points
+stripchart(septa.trimmed.20$Mean_Septa ~ septa.trimmed.20$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+g4 <- boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed.40, col = colors_mpha, ylim = c(5,12), outline = FALSE, xlab = 'Species', ylab = 'Number of septa protruding \n through tissue', xaxt = 'n', las = 2)
+axis(1, labels = FALSE)
+mtext("40 meters", side=3, adj = 0, line = 0.7)
+
+# Points
+stripchart(septa.trimmed.40$Mean_Septa ~ septa.trimmed.40$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+par(mar = c(6, 6, 2, 1))
+g5 <- boxplot(Mean_Septa ~ Species_mpha, data = septa.trimmed.60, col = colors_mpha, ylim = c(5,12), outline = FALSE, xlab = '', ylab = 'Number of septa protruding \n through tissue', xaxt = 'n', las = 2)
+axis(1, labels = FALSE)
+mtext("60 meters", side=3, adj = 0, line = 0.7)
+
+# Points
+stripchart(septa.trimmed.60$Mean_Septa ~ septa.trimmed.60$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+text(x = c(1:7),
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.7,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN", "UNKN"),
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+mtext('Species', side = 1, line = 5)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
 
 
 

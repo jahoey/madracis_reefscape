@@ -10,7 +10,6 @@ library(car)
 library(lattice)
 library(multcompView)
 library(FSA)
-library(ggpubr)
 library(multcompView)
 
 #### Functions ####
@@ -101,14 +100,241 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 # Change depth categories into integers
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
-#### Quick facet plot for each unique site/depth combination ####
-plot_boxplot_facet <- function(df, y_var) {
+#### Quick facet plot for each unique site/depth combination. There is some variation in the pattern between sites ####
+# plot_boxplot_facet <- function(df, y_var) {
+#   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
+#     geom_boxplot(alpha = 1, outlier.shape = NA) +
+#     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+#     facet_grid(depth ~ site) +  # Facet by site and depth
+#     theme_minimal() +
+#     labs(y = y_var, title = paste(y_var), x = "Genetic lineage") +
+#     theme(
+#       axis.text.x = element_text(angle = 45, hjust = 1),
+#       panel.grid = element_blank(),  # Remove all grid lines
+#       panel.background = element_blank(),  # Remove background color
+#       strip.background = element_blank(),  # Remove facet background
+#       strip.text = element_text(face = "bold"),  # Keep facet text bold
+#       axis.line = element_line(color = "black"),  # Show x and y axes
+#       axis.ticks = element_line(color = "black"), # Show axis ticks
+#       panel.border = element_rect(color = "black", fill = NA) 
+#     ) +
+#     scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
+#                                  "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
+# }
+
+# Facet plot with ANOVA for each unique site/depth
+plot_boxplot_facet_anova <- function(df, y_var) {
+  tukey_results <- df %>%
+    group_by(site, depth) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      # Skip if there are fewer than two unique labels
+      if (length(unique(sub_df$label)) < 2) {
+        return(NULL)
+      }
+      
+      # Perform ANOVA
+      anova_model <- aov(sub_df[[y_var]] ~ sub_df$label)
+      
+      # Skip if ANOVA couldn't run
+      if (length(coef(anova_model)) < 2) {
+        return(NULL)
+      }
+      
+      # Check if there are enough levels for Tukey test
+      num_groups <- length(unique(sub_df$label))
+      if (num_groups < 2) {
+        return(NULL)
+      }
+      
+      # Perform Tukey’s HSD test
+      tukey_test <- tryCatch(
+        TukeyHSD(anova_model),
+        error = function(e) NULL
+      )
+      
+      # Skip if Tukey test failed or if there are fewer than 2 groups
+      if (is.null(tukey_test) || nrow(tukey_test$`sub_df$label`) < 1) return(NULL)
+      
+      # Extract p-values and perform multiple comparison letters
+      tukey_values <- tukey_test$`sub_df$label`[, "p adj"]
+      valid_names <- grep("-", names(tukey_values), value = TRUE)  # Ensure valid comparisons
+      tukey_values <- tukey_values[valid_names]
+      
+      # Skip if no valid comparisons
+      if (length(tukey_values) == 0) return(NULL)
+      
+      # Assign letters based on Tukey test significance
+      tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
+      
+      # Return formatted results
+      data.frame(label = names(tukey_letters), Letters = tukey_letters, 
+                 site = unique(sub_df$site), depth = unique(sub_df$depth))
+    }) %>%
+    bind_rows()
+  
+  # Compute maximum y-values for each group to position Tukey letters properly
+  y_max <- df %>%
+    group_by(site, depth, label) %>%
+    summarize(max_y = max(.data[[y_var]], na.rm = TRUE) * 1.05, .groups = "drop")
+  
+  # Merge Tukey results with max y-values for plotting
+  tukey_results <- left_join(tukey_results, y_max, by = c("site", "depth", "label"))
+  
+  # Create boxplot with Tukey letters
   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
     geom_boxplot(alpha = 1, outlier.shape = NA) +
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(depth ~ site) +  # Facet by site and depth
+    geom_text(data = tukey_results, aes(x = label, y = max_y *1.2, label = Letters),
+              color = "black", size = 4, fontface = "bold", na.rm = TRUE) +  # Tukey letters
     theme_minimal() +
     labs(y = y_var, title = paste(y_var), x = "Genetic lineage") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid = element_blank(),  # Remove grid lines
+      panel.background = element_blank(),  # Remove background color
+      strip.background = element_blank(),  # Remove facet background
+      strip.text = element_text(face = "bold"),  # Keep facet text bold
+      axis.line = element_line(color = "black"),  # Show axes
+      axis.ticks = element_line(color = "black"), # Show axis ticks
+      panel.border = element_rect(color = "black", fill = NA)  # Add borders
+    ) +
+    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
+                                 "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
+}
+
+# Plot each of the measurements and save
+png(file=here("3D_models/figures/dev_rug_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet_anova(mad_ann_seq_core, "dev_rug")
+
+dev.off()
+
+png(file=here("3D_models/figures/gapF_fill_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_fill")
+
+dev.off()
+
+png(file=here("3D_models/figures/gapF_raw_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_raw")
+
+dev.off()
+
+png(file=here("3D_models/figures/luminance_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet_anova(mad_ann_seq_core, "luminance")
+
+dev.off()
+
+#### Aggregate data across sites by depth, with an option for ANOVA ####
+# plot_boxplot_by_depth <- function(df, y_var) {
+#   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
+#     geom_boxplot(alpha = 1, outlier.shape = NA) +
+#     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+#     facet_wrap(~depth, nrow = 1) +  # Facet by depth only, scales = "free_y" lets y-axis vary
+#     theme_minimal() +
+#     labs(y = y_var, title = paste(y_var), x = "Genetic lineage") +
+#     theme(
+#       axis.text.x = element_text(angle = 45, hjust = 1),
+#       panel.grid = element_blank(),  # Remove all grid lines
+#       panel.background = element_blank(),  # Remove background color
+#       strip.background = element_blank(),  # Remove facet background
+#       strip.text = element_text(face = "bold"),  # Keep facet text bold
+#       axis.line = element_line(color = "black"),  # Show x and y axes
+#       axis.ticks = element_line(color = "black"), # Show axis ticks
+#       panel.border = element_rect(color = "black", fill = NA)  # Add borders
+#     ) +
+#     scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
+#                                  "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
+# }
+
+plot_boxplot_anova <- function(df, y_var) {
+  tukey_results <- df %>%
+    group_by(depth) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      # Perform ANOVA only if there are at least 2 unique labels
+      if (length(unique(sub_df$label)) < 2) {
+        return(NULL)  # Skip ANOVA if only one group exists
+      }
+      
+      anova_model <- aov(sub_df[[y_var]] ~ sub_df$label)
+      
+      # Perform Tukey’s HSD test
+      tukey_test <- tryCatch(
+        TukeyHSD(anova_model),
+        error = function(e) NULL  # Handle error cases gracefully
+      )
+      
+      # Skip if Tukey test failed
+      if (is.null(tukey_test)) return(NULL)
+      
+      # Extract p-values safely
+      tukey_values <- tukey_test$`sub_df$label`[, "p adj"]
+      valid_names <- grep("-", names(tukey_values), value = TRUE)  # Ensure valid comparisons
+      tukey_values <- tukey_values[valid_names]
+      
+      # Skip if no valid comparisons
+      if (length(tukey_values) == 0) return(NULL)
+      
+      # Assign letters
+      tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
+      
+      # Return formatted dataframe
+      data.frame(label = names(tukey_letters), Letters = tukey_letters, depth = unique(sub_df$depth))
+    }) %>%
+    bind_rows()
+  
+  # Compute max y values per depth to position letters properly
+  y_max <- df %>%
+    group_by(depth, label) %>%
+    summarize(max_y = max(.data[[y_var]], na.rm = TRUE) * 1.05, .groups = "drop")
+  
+  # Merge Tukey results with max y values
+  tukey_results <- left_join(tukey_results, y_max, by = c("depth", "label"))
+  
+  # Plot boxplots with significance letters
+  ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
+    geom_boxplot(alpha = 1, outlier.shape = NA) +
+    geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+    facet_wrap(~depth, nrow = 1) +  # Facet by depth in a single row
+    geom_text(data = tukey_results, aes(x = label, y = max_y * 1.05, label = Letters),
+              color = "black", size = 4, fontface = "bold", na.rm = TRUE) +  # Tukey letters
+    theme_minimal() +
+    labs(y = y_var, x = "Genetic lineage") +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       panel.grid = element_blank(),  # Remove all grid lines
@@ -117,14 +343,14 @@ plot_boxplot_facet <- function(df, y_var) {
       strip.text = element_text(face = "bold"),  # Keep facet text bold
       axis.line = element_line(color = "black"),  # Show x and y axes
       axis.ticks = element_line(color = "black"), # Show axis ticks
-      panel.border = element_rect(color = "black", fill = NA) 
+      panel.border = element_rect(color = "black", fill = NA)  # Add borders
     ) +
     scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
                                  "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
 }
 
 # Plot each of the measurements and save
-png(file=here("3D_models/figures/dev_rug_facet.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/dev_rug_bydepth_anova.png"), width=16, height=4, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -134,37 +360,11 @@ par(
   ps=14 # point size, which is the font size
 )
 
-plot_boxplot_facet(mad_ann_seq_core, "dev_rug")
+plot_boxplot_anova(mad_ann_seq_core, "dev_rug")
 
 dev.off()
 
-png(file=here("3D_models/figures/gapF_fill_facet.png"), width=12, height=8, res=300, units="in")
-
-par(
-  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
-  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
-  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
-  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14 # point size, which is the font size
-)
-plot_boxplot_facet(mad_ann_seq_core, "gapF_fill")
-
-dev.off()
-
-png(file=here("3D_models/figures/gapF_raw_facet.png"), width=12, height=8, res=300, units="in")
-
-par(
-  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
-  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
-  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
-  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14 # point size, which is the font size
-)
-plot_boxplot_facet(mad_ann_seq_core, "gapF_raw")
-
-dev.off()
-
-png(file=here("3D_models/figures/luminance_facet.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/gapF_fill_bydepth_anova.png"), width=16, height=4, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -174,63 +374,40 @@ par(
   ps=14 # point size, which is the font size
 )
 
-plot_boxplot_facet(mad_ann_seq_core, "luminance")
+plot_boxplot_anova(mad_ann_seq_core, "gapF_fill")
 
 dev.off()
 
-#######
+png(file=here("3D_models/figures/gapF_raw_bydepth_anova.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+plot_boxplot_anova(mad_ann_seq_core, "gapF_raw")
+
+dev.off()
+
+png(file=here("3D_models/figures/luminance_bydepth_anova.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core, "luminance")
+
+dev.off()
 
 
-# Function to perform ANOVA, Tukey test, and generate a boxplot with significance letters
-plot_boxplot_anova <- function(df, y_var) {
-  df$site_depth <- paste(df$site, df$depth, sep = "_")  # Create site-depth grouping
-  
-  # Split data by site-depth
-  df_list <- split(df, df$site_depth)
-  
-  plots <- list()
-  
-  for (name in names(df_list)) {
-    subset_df <- df_list[[name]]
-    
-    # Perform ANOVA
-    aov_model <- aov(as.formula(paste(y_var, "~ label")), data = subset_df)
-    tukey_result <- TukeyHSD(aov_model)
-    
-    # Extract Tukey letters
-    tukey_letters <- multcompLetters4(aov_model, tukey_result)$label
-    letters_df <- data.frame(label = names(tukey_letters), Letters = tukey_letters)
-    
-    # Merge letters with subset_df
-    summary_df <- subset_df %>%
-      group_by(label) %>%
-      summarise(median_y = median(.data[[y_var]], na.rm = TRUE)) %>%
-      left_join(letters_df, by = "label")
-    
-    # Generate boxplot
-    p <- ggplot(subset_df, aes(x = label, y = .data[[y_var]], fill = label)) +
-      geom_boxplot(alpha = 0.6, outlier.shape = NA) +
-      geom_jitter(width = 0.2, alpha = 0.7, size = 2) +
-      scale_fill_manual(values = custom_colors) + 
-      geom_text(data = summary_df, aes(x = label, y = median_y + 0.05 * max(subset_df[[y_var]], na.rm = TRUE), label = Letters), size = 5) + 
-      theme_minimal() +
-      labs(y = y_var, title = paste("Site:", subset_df$site[1], "- Depth:", subset_df$depth[1])) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1),
-            legend.position = "none")  # Hide legend since color represents label
-    
-    plots[[name]] <- p
-  }
-  
-  return(plots)
-}
 
-# Generate plots for each variable
-dev_rug_plots <- plot_boxplot_anova(mad_ann_seq, "dev_rug")
-gapF_fill_plots <- plot_boxplot_anova(mad_ann_seq, "gapF_fill")
-luminance_plots <- plot_boxplot_anova(mad_ann_seq, "luminance")
 
-# Example: Display a plot
-print(dev_rug_plots[[1]])  # Show first dev_rug plot
 
 
 

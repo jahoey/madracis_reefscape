@@ -88,30 +88,98 @@ dim(sna_40) #5x17
 #### Combine the separate objects into one and filter ####
 coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #524x17
 
-mad_ann <- coral_ann[!coral_ann$label %in% c( 'SINT'),] #512x17
+mad_ann <- coral_ann[!coral_ann$label %in% c( 'SINT'),] #512x17, remove SINT
 
 mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 431x17
 
+mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration
+
 # See if the unknowns have a more updated ID
-mad_ann_seq[which(mad_ann_seq$label == 'UNKN'),1]
-metadata[metadata$ID %in% mad_ann_seq[which(mad_ann_seq$label == 'UNKN'),1],]
+mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
+metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1],]
+
+# Change depth categories into integers
+mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
 #### Quick facet plot for each unique site/depth combination ####
 plot_boxplot_facet <- function(df, y_var) {
   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
     geom_boxplot(alpha = 1, outlier.shape = NA) +
-    geom_jitter(width = 0.2, alpha = 0.5, size = 2) +
+    geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(depth ~ site) +  # Facet by site and depth
     theme_minimal() +
     labs(y = y_var, title = paste(y_var), x = "Genetic lineage") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid = element_blank(),  # Remove all grid lines
+      panel.background = element_blank(),  # Remove background color
+      strip.background = element_blank(),  # Remove facet background
+      strip.text = element_text(face = "bold"),  # Keep facet text bold
+      axis.line = element_line(color = "black"),  # Show x and y axes
+      axis.ticks = element_line(color = "black"), # Show axis ticks
+      panel.border = element_rect(color = "black", fill = NA) 
+    ) +
+    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
+                                 "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
 }
 
-plot_boxplot_facet(mad_ann_seq, "dev_rug")
-plot_boxplot_facet(mad_ann_seq, "gapF_fill")
-plot_boxplot_facet(mad_ann_seq, "gapF_raw")
-plot_boxplot_facet(mad_ann_seq, "luminance")
+# Plot each of the measurements and save
+png(file=here("3D_models/figures/dev_rug_facet.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet(mad_ann_seq_core, "dev_rug")
+
+dev.off()
+
+png(file=here("3D_models/figures/gapF_fill_facet.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+plot_boxplot_facet(mad_ann_seq_core, "gapF_fill")
+
+dev.off()
+
+png(file=here("3D_models/figures/gapF_raw_facet.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+plot_boxplot_facet(mad_ann_seq_core, "gapF_raw")
+
+dev.off()
+
+png(file=here("3D_models/figures/luminance_facet.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet(mad_ann_seq_core, "luminance")
+
+dev.off()
+
+#######
+
 
 # Function to perform ANOVA, Tukey test, and generate a boxplot with significance letters
 plot_boxplot_anova <- function(df, y_var) {

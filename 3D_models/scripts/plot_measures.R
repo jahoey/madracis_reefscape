@@ -100,6 +100,11 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 # Change depth categories into integers
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
+# Look at means
+aggregate(x=mad_ann_seq_core$gapF_fill,
+          by=list(mad_ann_seq_core$label,mad_ann_seq_core$depth, mad_ann_seq_core$site),
+          FUN=mean)
+
 #### Quick facet plot for each unique site/depth combination. There is some variation in the pattern between sites ####
 # plot_boxplot_facet <- function(df, y_var) {
 #   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
@@ -405,45 +410,22 @@ plot_boxplot_anova(mad_ann_seq_core, "luminance")
 
 dev.off()
 
+###########################################
+#### Validate ANOVA results for kal_20 ####
+###########################################
+mad_ann_seq_core_20 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == '20' & mad_ann_seq_core$site == 'kal'),]
 
+# Visualization #
+boxplot(gapF_fill ~ site + label, data = mad_ann_seq_core_20)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-mad_ann_seq_20 <- mad_ann_seq[which(mad_ann_seq$depth == '20'),]
-
-mad_ann_seq_20 <- mad_ann_seq_20[!mad_ann_seq_20$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),]# remove edge cases
-
-#### Visualization ####
-boxplot(gapF_fill ~ site + label, data = mad_ann_seq_20)
-
-aggregate(gapF_fill ~ label + site, data = mad_ann_seq_20,
+aggregate(gapF_fill ~ label + site, data = mad_ann_seq_core_20,
           function(x) round(c(mean = mean(x), sd = sd(x)), 2)
 )
 
-table(mad_ann_seq$depth, mad_ann_seq$label)
-
+table(mad_ann_seq_core_20$depth, mad_ann_seq_core_20$label)
 
 #### ANOVA ####
-gapF_fill_lm <- lm(gapF_fill ~ label, data = mad_ann_seq_20) #just 20m for kal, est and sna
+gapF_fill_lm <- lm(gapF_fill ~ label, data = mad_ann_seq_core_20) #just 20m for kal, est and sna
 summary(gapF_fill_lm)
 
 par(mfrow = c(1,2)) # combine plots
@@ -452,20 +434,20 @@ qqPlot(gapF_fill_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point 
 
 shapiro.test(gapF_fill_lm$residuals) # formal Shapiro-Wilk normality test
 
-boxplot(gapF_fill ~ label, data = mad_ann_seq_20)
-dotplot(gapF_fill ~ label, data = mad_ann_seq_20)
+boxplot(gapF_fill ~ label, data = mad_ann_seq_core_20)
+dotplot(gapF_fill ~ label, data = mad_ann_seq_core_20)
 
-boxplot(gapF_fill ~ site, data = mad_ann_seq_20)
-dotplot(gapF_fill ~ site, data = mad_ann_seq_20)
+boxplot(gapF_fill ~ site, data = mad_ann_seq_core_20)
+dotplot(gapF_fill ~ site, data = mad_ann_seq_core_20)
 
-leveneTest(gapF_fill ~ label, data = mad_ann_seq_20) # formal Levene's test for equality of variances
+leveneTest(gapF_fill ~ label, data = mad_ann_seq_core_20) # formal Levene's test for equality of variances
 
 Anova(gapF_fill_lm)
 TUKEY <- TukeyHSD(aov(gapF_fill_lm))
 
 plot(TUKEY)
 
-png(file=here("figures/mad_20m_species_boxplots.png"), width=8, height=6, res=300, units="in")
+png(file=here("figures/mad_kal20_species_boxplots.png"), width=8, height=6, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -476,15 +458,15 @@ par(
 )
 
 # Basic boxplot
-# colors_mpha <- c("#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6")
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8"
+colors_mpha <- c("#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "gray70")
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8"
 show_col(colors_mpha)
 
-a <- boxplot(mad_ann_seq_20$gapF_fill ~ mad_ann_seq_20$label, col = colors_mpha, ylim = c(0,1.1), xlab = 'Genetic lineage', ylab = 'Gap fraction', main = "20 meters", outline = FALSE) # don't draw outliers so that they aren't doubled when the points go on top
+a <- boxplot(mad_ann_seq_core_20$gapF_fill ~ mad_ann_seq_core_20$label, col = colors_mpha, ylim = c(0,1.1), xlab = 'Genetic lineage', ylab = 'Gap fraction', main = "20 meters", outline = FALSE) # don't draw outliers so that they aren't doubled when the points go on top
 
 # Add data points
 # Points
-stripchart(mad_ann_seq_20$gapF_fill ~ mad_ann_seq_20$label, # Data
+stripchart(mad_ann_seq_core_20$gapF_fill ~ mad_ann_seq_core_20$label, # Data
            method = "jitter", # Random noise
            pch = 1,          # Pch symbols
            col = 'black',           # Color of the symbol
@@ -493,7 +475,7 @@ stripchart(mad_ann_seq_20$gapF_fill ~ mad_ann_seq_20$label, # Data
 
 # Generate Tukey groups
 # Apply the function on my dataset
-LABELS <- generate_label_df(TUKEY , "mad_ann_seq_20$label")
+LABELS <- generate_label_df(TUKEY , "mad_ann_seq_core_20$label")
 
 # I want to write the letter over each box. Over is how high I want to write it.
 over <- 0.1*max( a$stats[nrow(a$stats),] )
@@ -502,6 +484,22 @@ over <- 0.1*max( a$stats[nrow(a$stats),] )
 text( c(1:4) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col= 'black' )
 
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #### By individual site and depth combinations ####
 a <- boxplot(kal_10$gapF_fill ~ kal_10$label, col = colors_mpha, ylim = c(0,1.1), xlab = 'Genetic lineage', ylab = 'Gap fraction', main = "", outline = FALSE) # don't draw outliers so that they aren't doubled when the points go on top

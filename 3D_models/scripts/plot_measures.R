@@ -11,6 +11,7 @@ library(lattice)
 library(multcompView)
 library(FSA)
 library(multcompView)
+library(RColorBrewer)
 
 #### Functions ####
 error.bar <- function(x, y, upper, lower=upper, length=0.1,...){
@@ -33,10 +34,10 @@ metadata <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
-directory <- here("3D_models/output/hab_measures")
+directory <- here("3D_models/output/hab_measures_diff_radii_Feb2025/")
 
-# List all CSV files with the pattern *_measurements.csv
-csv_files <- list.files(path = directory, pattern = "*_measurements.csv", full.names = TRUE)
+# List all CSV files with the pattern *_measurements.csv; modify depending on desired radius
+csv_files <- list.files(path = directory, pattern = "*radius0.2_measurements.csv", full.names = TRUE)
 
 # Function to extract the desired parts of the file name
 extract_parts <- function(file_path) {
@@ -66,7 +67,9 @@ for (file in csv_files) {
   assign(object_name, data)
 }
 
-# Verify that the objects have been created and they have the correct dimensions
+# Verify that the objects have been created and they have the correct dimensions; these are for radius 0.2
+dim(dir_05)
+# dim(dir_20)
 dim(est_05) #19x17
 dim(est_10) #104x17
 dim(est_20) #68x17
@@ -83,9 +86,10 @@ dim(sea_20) #13x17
 dim(sna_10) #23x17
 dim(sna_20) #51x17
 dim(sna_40) #5x17
+dim(wat_05)
 
 #### Combine the separate objects into one and filter ####
-coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #524x17
+coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #524x17
 
 mad_ann <- coral_ann[!coral_ann$label %in% c( 'SINT'),] #512x17, remove SINT
 
@@ -210,7 +214,7 @@ plot_boxplot_facet_anova <- function(df, y_var) {
 }
 
 # Plot each of the measurements and save
-png(file=here("3D_models/figures/dev_rug_facet_anova.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/dev_rug_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -224,7 +228,7 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "dev_rug")
 
 dev.off()
 
-png(file=here("3D_models/figures/gapF_fill_facet_anova.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/gapF_fill_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -237,7 +241,7 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_fill")
 
 dev.off()
 
-png(file=here("3D_models/figures/gapF_raw_facet_anova.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/gapF_raw_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -250,7 +254,7 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_raw")
 
 dev.off()
 
-png(file=here("3D_models/figures/luminance_facet_anova.png"), width=12, height=8, res=300, units="in")
+png(file=here("3D_models/figures/luminance_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -261,6 +265,20 @@ par(
 )
 
 plot_boxplot_facet_anova(mad_ann_seq_core, "luminance")
+
+dev.off()
+
+png(file=here("3D_models/figures/vector_disp_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet_anova(mad_ann_seq_core, "vector_disp")
 
 dev.off()
 
@@ -484,6 +502,103 @@ over <- 0.1*max( a$stats[nrow(a$stats),] )
 text( c(1:4) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col= 'black' )
 
 dev.off()
+
+#####################################
+#### ANOVA, look at main effects ####
+#####################################
+mad_ann_seq_core <- mad_ann_seq_core[which(mad_ann_seq_core$site %in% c('est', 'kal', 'sna')),] # looking at the main sites
+
+# Gap Fraction Fill
+gapF_fill_lm <- lm(gapF_fill ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
+summary(gapF_fill_lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(gapF_fill_lm$residuals) # histogram
+qqPlot(gapF_fill_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(gapF_fill_lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(gapF_fill ~ label, data = mad_ann_seq_core)
+dotplot(gapF_fill ~ label, data = mad_ann_seq_core)
+
+boxplot(gapF_fill ~ site, data = mad_ann_seq_core)
+dotplot(gapF_fill ~ site, data = mad_ann_seq_core)
+
+leveneTest(gapF_fill ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
+
+Anova(gapF_fill_lm) # everything has a main effect
+
+# Dev rug
+dev_rug_lm <- lm(dev_rug ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
+summary(dev_rug_lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(dev_rug_lm$residuals) # histogram
+qqPlot(dev_rug_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(dev_rug_lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(dev_rug ~ label, data = mad_ann_seq_core)
+dotplot(dev_rug ~ label, data = mad_ann_seq_core)
+
+boxplot(dev_rug ~ site, data = mad_ann_seq_core)
+dotplot(dev_rug ~ site, data = mad_ann_seq_core)
+
+leveneTest(dev_rug ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
+
+Anova(dev_rug_lm) # depth has a main effect
+
+# Vector dispersion
+vector_disp_lm <- lm(vector_disp ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
+summary(vector_disp_lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(vector_disp_lm$residuals) # histogram
+qqPlot(vector_disp_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(vector_disp_lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(vector_disp ~ label, data = mad_ann_seq_core)
+dotplot(vector_disp ~ label, data = mad_ann_seq_core)
+
+boxplot(vector_disp ~ site, data = mad_ann_seq_core)
+dotplot(vector_disp ~ site, data = mad_ann_seq_core)
+
+leveneTest(vector_disp ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
+
+Anova(vector_disp_lm) # site and depth has a main effect
+
+# Luminance
+luminance_lm <- lm(luminance ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
+summary(luminance_lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(luminance_lm$residuals) # histogram
+qqPlot(luminance_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(luminance_lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(luminance ~ label, data = mad_ann_seq_core)
+dotplot(luminance ~ label, data = mad_ann_seq_core)
+
+boxplot(luminance ~ site, data = mad_ann_seq_core)
+dotplot(luminance ~ site, data = mad_ann_seq_core)
+
+leveneTest(luminance ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
+
+Anova(luminance_lm) # site and depth has a main effect
+
+#### Scatterplots ####
+cols <- brewer.pal(n = 3, name = 'Dark2')
+plot(mad_ann_seq_core$dev_rug, mad_ann_seq_core$vector_disp, pch = 19, col = cols[factor(mad_ann_seq_core$site)], xlab = 'dev_rug', ylab = 'vector_disp')
+legend('bottomright', legend = c('est', 'kal', 'sna'), pch = 19, col = cols)
+
+plot(mad_ann_seq_core$dev_rug, mad_ann_seq_core$gapF_fill, pch = 19, col = cols[factor(mad_ann_seq_core$site)], xlab = 'dev_rug', ylab = 'gapF_fill')
+legend('topright', legend = c('est', 'kal', 'sna'), pch = 19, col = cols)
+
+
+
+
 
 
 

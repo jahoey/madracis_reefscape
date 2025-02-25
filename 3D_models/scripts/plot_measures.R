@@ -12,8 +12,17 @@ library(multcompView)
 library(FSA)
 library(multcompView)
 library(RColorBrewer)
+library(cluster)
 
 #### Functions ####
+add.alpha <- function(col, alpha=1){
+  if(missing(col))
+    stop("Please provide a vector of colours.")
+  apply(sapply(col, col2rgb)/255, 2, 
+        function(x) 
+          rgb(x[1], x[2], x[3], alpha=alpha))  
+}
+
 error.bar <- function(x, y, upper, lower=upper, length=0.1,...){
   arrows(x,y+upper, x, y-lower, angle=90, code=3, length=length, ...)
 } # error bar function
@@ -34,10 +43,10 @@ metadata <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
-directory <- here("3D_models/output/hab_measures_diff_radii_Feb2025/")
+directory <- here("3D_models/output/hab_measures")
 
 # List all CSV files with the pattern *_measurements.csv; modify depending on desired radius
-csv_files <- list.files(path = directory, pattern = "*radius0.2_measurements.csv", full.names = TRUE)
+csv_files <- list.files(path = directory, pattern = "measurements_quality.csv", full.names = TRUE)
 
 # Function to extract the desired parts of the file name
 extract_parts <- function(file_path) {
@@ -68,28 +77,28 @@ for (file in csv_files) {
 }
 
 # Verify that the objects have been created and they have the correct dimensions; these are for radius 0.2
-dim(dir_05)
+dim(dir_05) #5x24
 # dim(dir_20)
-dim(est_05) #19x17
-dim(est_10) #104x17
-dim(est_20) #68x17
-dim(est_40) #33x17
-dim(est_60) #14x17
-dim(hul_20) #21x17
-dim(kal_05) #19x17
-dim(kal_10) #77x17
-dim(kal_20) #66x17
-dim(kal_40) #24x17
-dim(sea_10) #8x17
-dim(sea_20) #13x17
+dim(est_05) #9x24
+dim(est_10) #66x24
+dim(est_20) #54x24
+dim(est_40) #32x24
+dim(est_60) #14x24
+dim(hul_20) #21x24
+dim(kal_05) #13x24
+dim(kal_10) #55x24
+dim(kal_20) #48x24
+dim(kal_40) #19x24
+dim(sea_10) #6x24
+dim(sea_20) #12x24
 # dim(sna_05) #10x20
-dim(sna_10) #23x17
-dim(sna_20) #51x17
-dim(sna_40) #5x17
-dim(wat_05)
+dim(sna_10) #15x24
+dim(sna_20) #46x24
+dim(sna_40) #5x24
+dim(wat_05) #2x24
 
 #### Combine the separate objects into one and filter ####
-coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #524x17
+coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
 
 mad_ann <- coral_ann[!coral_ann$label %in% c( 'SINT'),] #512x17, remove SINT
 
@@ -282,6 +291,20 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "vector_disp")
 
 dev.off()
 
+png(file=here("3D_models/figures/substrate_angle_rad0.2_facet_anova.png"), width=12, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet_anova(mad_ann_seq_core, "elevation")
+
+dev.off()
+
 #### Aggregate data across sites by depth, with an option for ANOVA ####
 # plot_boxplot_by_depth <- function(df, y_var) {
 #   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
@@ -428,6 +451,55 @@ plot_boxplot_anova(mad_ann_seq_core, "luminance")
 
 dev.off()
 
+#################################
+#### Multivariate approaches ####
+#################################
+colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6")
+show_col(colors_mpha)
+
+# MANOVA
+manova_results <- manova(cbind(dev_rug, elevation, gapF_fill, luminance, vector_disp) ~ label + site + depth, data = mad_ann_seq_core)
+summary(manova_results)
+summary.aov(manova_results)
+
+# MDS analysis
+# All
+mds_mad <- cmdscale(dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 3)
+
+par(mfrow = c(2,2))
+plot(mds_mad[,1], mds_mad[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
+plot(mds_mad[,2], mds_mad[,3], xlab = 'MDS 2', ylab = 'MDS 3', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
+plot(mds_mad[,1], mds_mad[,3], xlab = 'MDS 1', ylab = 'MDS 3', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
+
+# By depth
+mad5 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 5),]
+mad10 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 10),]
+mad20 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 20),]
+mad40 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 40),]
+mad60 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 60),]
+
+mds_mad5 <- cmdscale(dist(mad5[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
+mds_mad10 <- cmdscale(dist(mad10[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
+mds_mad20 <- cmdscale(dist(mad20[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
+mds_mad40 <- cmdscale(dist(mad40[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
+mds_mad60 <- cmdscale(dist(mad60[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
+
+par(mfrow = c(3,2))
+plot(mds_mad5[,1], mds_mad5[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,3,4,6,7)][factor(mad5$label)], 0.7), pch = 19, main = '5m')
+plot(mds_mad10[,1], mds_mad10[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(3,4,7)][factor(mad10$label)], 0.7), pch = 19, main = '10m')
+plot(mds_mad20[,1], mds_mad20[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,3,7)][factor(mad20$label)], 0.7), pch = 19, main = '20m')
+plot(mds_mad40[,1], mds_mad40[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,2,4,5)][factor(mad40$label)], 0.7), pch = 19, main = '40m')
+plot(mds_mad60[,1], mds_mad60[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1:5)][factor(mad60$label)], 0.7), pch = 19, main = '60m')
+
+# PCA analysis
+pca_mad <- prcomp(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], center = TRUE, scale. = TRUE)
+
+plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)')
+summ <- summary(pca_mad)
+summ$importance
+
+
+
 ###########################################
 #### Validate ANOVA results for kal_20 ####
 ###########################################
@@ -443,7 +515,7 @@ aggregate(gapF_fill ~ label + site, data = mad_ann_seq_core_20,
 table(mad_ann_seq_core_20$depth, mad_ann_seq_core_20$label)
 
 #### ANOVA ####
-gapF_fill_lm <- lm(gapF_fill ~ label, data = mad_ann_seq_core_20) #just 20m for kal, est and sna
+gapF_fill_lm <- lm(gapF_fill ~ label, data = mad_ann_seq_core_20) #just 20m for kal
 summary(gapF_fill_lm)
 
 par(mfrow = c(1,2)) # combine plots
@@ -526,7 +598,7 @@ dotplot(gapF_fill ~ site, data = mad_ann_seq_core)
 
 leveneTest(gapF_fill ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
 
-Anova(gapF_fill_lm) # everything has a main effect
+Anova(gapF_fill_lm) # everything has a main effect, but site just barely
 
 # Dev rug
 dev_rug_lm <- lm(dev_rug ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
@@ -566,7 +638,7 @@ dotplot(vector_disp ~ site, data = mad_ann_seq_core)
 
 leveneTest(vector_disp ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
 
-Anova(vector_disp_lm) # site and depth has a main effect
+Anova(vector_disp_lm) # site and depth has a main effect, but site just barely
 
 # Luminance
 luminance_lm <- lm(luminance ~ label + site + depth, data = mad_ann_seq_core) #all 20m corals
@@ -586,7 +658,7 @@ dotplot(luminance ~ site, data = mad_ann_seq_core)
 
 leveneTest(luminance ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
 
-Anova(luminance_lm) # site and depth has a main effect
+Anova(luminance_lm) # everything has a main effect
 
 #### Scatterplots ####
 cols <- brewer.pal(n = 3, name = 'Dark2')
@@ -595,6 +667,70 @@ legend('bottomright', legend = c('est', 'kal', 'sna'), pch = 19, col = cols)
 
 plot(mad_ann_seq_core$dev_rug, mad_ann_seq_core$gapF_fill, pch = 19, col = cols[factor(mad_ann_seq_core$site)], xlab = 'dev_rug', ylab = 'gapF_fill')
 legend('topright', legend = c('est', 'kal', 'sna'), pch = 19, col = cols)
+
+#############################################################
+#### Try to recreate ECRS results for 20m est, kal & sna ####
+#############################################################
+# Additional samples for all sites are drawing down gap_frac for MPHA.ln1, in particular
+mad_ann_seq_core_20 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == '20'),] # try to recreate ECRS results that just used 20m kal, est, sna
+
+mad_ann_seq_core_20_ecrs <- mad_ann_seq_core_20[which(mad_ann_seq_core_20$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN')),] # 144 corals
+
+gapF_fill_ecrs <- lm(gapF_fill ~ label, data = mad_ann_seq_core_20_ecrs) #just 20m for kal, est and sna
+summary(gapF_fill_ecrs)
+
+par(mfrow = c(1,2)) # combine plots
+hist(gapF_fill_ecrs$residuals) # histogram
+qqPlot(gapF_fill_ecrs$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(gapF_fill_ecrs$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(gapF_fill ~ label, data = mad_ann_seq_core_20_ecrs)
+dotplot(gapF_fill ~ label, data = mad_ann_seq_core_20_ecrs)
+
+boxplot(gapF_fill ~ site, data = mad_ann_seq_core_20_ecrs)
+dotplot(gapF_fill ~ site, data = mad_ann_seq_core_20_ecrs)
+
+leveneTest(gapF_fill ~ label, data = mad_ann_seq_core_20_ecrs) # formal Levene's test for equality of variances
+
+Anova(gapF_fill_ecrs)
+TUKEY <- TukeyHSD(aov(gapF_fill_ecrs))
+
+plot(TUKEY)
+
+# Basic boxplot
+colors_mpha <- c("#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6")
+show_col(colors_mpha)
+
+a <- boxplot(mad_ann_seq_core_20_ecrs$gapF_fill ~ mad_ann_seq_core_20_ecrs$label, col = colors_mpha, ylim = c(0,1.1), xlab = 'Genetic lineage', ylab = 'Gap fraction', main = "20 meters", outline = FALSE) # don't draw outliers so that they aren't doubled when the points go on top
+
+# Add data points
+# Points
+stripchart(mad_ann_seq_core_20_ecrs$gapF_fill ~ mad_ann_seq_core_20_ecrs$label, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS <- generate_label_df(TUKEY , "mad_ann_seq_core_20_ecrs$label")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.1*max( a$stats[nrow(a$stats),] )
+
+#Add the labels
+text( c(1:4) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col= 'black' )
+
+
+
+
+
+
+
+
+
 
 
 

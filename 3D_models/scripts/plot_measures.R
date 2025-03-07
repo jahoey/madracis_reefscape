@@ -13,6 +13,9 @@ library(FSA)
 library(multcompView)
 library(RColorBrewer)
 library(cluster)
+library(effectsize)
+library(MASS)
+library(vegan)
 
 #### Functions ####
 add.alpha <- function(col, alpha=1){
@@ -100,11 +103,11 @@ dim(wat_05) #2x24
 #### Combine the separate objects into one and filter ####
 coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
 
-mad_ann <- coral_ann[!coral_ann$label %in% c( 'SINT'),] #512x17, remove SINT
+mad_ann <- coral_ann[!coral_ann$label %in% c('PPOR', 'SINT'),] #409x24, remove corals that aren't Madracis
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 431x17
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 349x24
 
-mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration
+mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 342x24
 
 # See if the unknowns have a more updated ID
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -456,20 +459,119 @@ dev.off()
 #################################
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6")
 show_col(colors_mpha)
+colors_depth <- c("#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#2171B5")
+show_col(colors_depth)
+colors_site <- c("#B8DE29FF", "#74D055FF", "#20A386FF", "#238A8DFF", "#2D718EFF", "#453781FF", "#481568FF")
+show_col(colors_site)
 
 # MANOVA
+dependent_vars <- cbind(mad_ann_seq_core$dev_rug, mad_ann_seq_core$elevation, mad_ann_seq_core$gapF_fill, mad_ann_seq_core$luminance, mad_ann_seq_core$vector_disp)
+independent_vars <- cbind.data.frame(mad_ann_seq_core$label, mad_ann_seq_core$site, mad_ann_seq_core$depth)
+
 manova_results <- manova(cbind(dev_rug, elevation, gapF_fill, luminance, vector_disp) ~ label + site + depth, data = mad_ann_seq_core)
 summary(manova_results)
 summary.aov(manova_results)
+eta_squared(manova_results) #depth has the biggest effect size
+
+# MANOVA post-hoc test (LDA) for each independent variable
+png(file=here("3D_models/figures/manova_posthoc_lda.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow=c(2,2)
+)
+
+# Depth
+depth_lda <- lda(mad_ann_seq_core$depth ~ dependent_vars, CV = F)
+depth_lda_df <- data.frame(depth = mad_ann_seq_core[, "depth"],
+                     lda = predict(depth_lda)$x)
+
+plot(depth_lda_df$lda.LD1, depth_lda_df$lda.LD2, col = add.alpha(colors_depth[factor(depth_lda_df$depth)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Depth')
+legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19)
+
+# Species
+species_lda <- lda(mad_ann_seq_core$label ~ dependent_vars, CV = F)
+species_lda_df <- data.frame(label = mad_ann_seq_core[, "label"],
+                           lda = predict(species_lda)$x)
+
+plot(species_lda_df$lda.LD1, species_lda_df$lda.LD2, col = add.alpha(colors_mpha[factor(species_lda_df$label)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Species', xlim = c(-5,4))
+legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.8)
+
+# Site
+site_lda <- lda(mad_ann_seq_core$site ~ dependent_vars, CV = F)
+site_lda_df <- data.frame(site = mad_ann_seq_core[, "site"],
+                             lda = predict(site_lda)$x)
+
+plot(site_lda_df$lda.LD1, site_lda_df$lda.LD2, col = add.alpha(colors_site[factor(site_lda_df$site)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Site')
+legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19)
+
+dev.off()
 
 # MDS analysis
-# All
-mds_mad <- cmdscale(dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 3)
+dist_matrix <- dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], method = "euclidean")
 
-par(mfrow = c(2,2))
-plot(mds_mad[,1], mds_mad[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
-plot(mds_mad[,2], mds_mad[,3], xlab = 'MDS 2', ylab = 'MDS 3', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
-plot(mds_mad[,1], mds_mad[,3], xlab = 'MDS 1', ylab = 'MDS 3', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19)
+mds_mad <- cmdscale(dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2, eig = TRUE)
+
+mds_distances <- dist(mds_mad$points)
+shepard_df <- data.frame(Original = as.vector(dist_matrix), MDS = as.vector(mds_distances))
+
+ggplot(shepard_df, aes(x = Original, y = MDS)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Shepard Plot: Original vs. MDS Distances") +
+  theme_minimal() # checks linearity, linear correlation so MDS is appropriate
+
+# Fit environmental variables to the MDS space
+env_fit <- envfit(mds_mad$points, mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], permutations = 999)
+
+# Extract arrow scores
+arrow_scores <- as.data.frame(scores(env_fit, display = "vectors"))  # Extract coordinates
+arrow_scores$variable <- rownames(arrow_scores)  # Add variable names
+
+# Filter for significant vetors
+significant_arrows <- arrow_scores[env_fit$vectors$pvals < 0.05, ]
+
+# All colored by species
+png(file=here("3D_models/figures/mds_all_species.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 10), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  xpd = TRUE
+)
+
+plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, ylim = c(-0.5, 1.2))
+arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
+text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
+legend('topright', inset = c(-0.3,0), legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, title = 'Species')
+
+dev.off()
+
+# All colored by depth
+png(file=here("3D_models/figures/mds_all_depth.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 6), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  xpd = TRUE
+)
+
+plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, ylim = c(-0.5, 1.2))
+arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
+text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
+legend('topright', inset = c(-0.15,0), legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, title = 'Depth')
+
+dev.off()
 
 # By depth
 mad5 <- mad_ann_seq_core[which(mad_ann_seq_core$depth == 5),]
@@ -484,17 +586,65 @@ mds_mad20 <- cmdscale(dist(mad20[, c("dev_rug", "elevation", "gapF_fill", "lumin
 mds_mad40 <- cmdscale(dist(mad40[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
 mds_mad60 <- cmdscale(dist(mad60[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2)
 
-par(mfrow = c(3,2))
+png(file=here("3D_models/figures/mds_by_depth.png"), width=8, height=12, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow=c(3,2)
+)
+
 plot(mds_mad5[,1], mds_mad5[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,3,4,6,7)][factor(mad5$label)], 0.7), pch = 19, main = '5m')
 plot(mds_mad10[,1], mds_mad10[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(3,4,7)][factor(mad10$label)], 0.7), pch = 19, main = '10m')
 plot(mds_mad20[,1], mds_mad20[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,3,7)][factor(mad20$label)], 0.7), pch = 19, main = '20m')
 plot(mds_mad40[,1], mds_mad40[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1,2,4,5)][factor(mad40$label)], 0.7), pch = 19, main = '40m')
 plot(mds_mad60[,1], mds_mad60[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[-c(1:5)][factor(mad60$label)], 0.7), pch = 19, main = '60m')
+plot.new()
+legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19)
+
+dev.off()
+
+# NMDS
+dist_nmds <- vegdist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], method = "bray")
+nmds_results <- metaMDS(dist_nmds, k = 2, trymax = 100)
+nmds_results$stress # check stress value: < 0.05 is excellent
+plot(nmds_results, type = "t")
+nmds_scores <- as.data.frame(scores(nmds_results))
+nmds_scores$depth <- mad_ann_seq_core$depth
+
+ggplot(nmds_scores, aes(NMDS1, NMDS2, color = depth)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  labs(title = "NMDS Ordination by depth")
 
 # PCA analysis
 pca_mad <- prcomp(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], center = TRUE, scale. = TRUE)
 
-plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)')
+png(file=here("3D_models/figures/pca.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow = c(2,2)
+)
+
+plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Depth')
+legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
+
+plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Species')
+legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.6)
+
+plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Sites')
+legend('topleft', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
+
+dev.off()
+
 summ <- summary(pca_mad)
 summ$importance
 

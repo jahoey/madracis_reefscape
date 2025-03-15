@@ -664,7 +664,7 @@ model3d.dapc.species <- dapc(model3d.data.scaled, mad_ann_seq_core$label)# by sp
 a_score <- optim.a.score(model3d.dapc.species) 
 
 # Step 2: perform DAPC
-model3d.dapc.species <- dapc(model3d.data.scaled, mad_ann_seq_core$label, n.pca = 5, n.da = 2)
+model3d.dapc.species <- dapc(model3d.data.scaled, mad_ann_seq_core$label, n.pca = 3, n.da = 2) # slightly more separation when fewer pcs are retained
 
 # Step 3: plot
 scatter(model3d.dapc.species)        # Visualizes the DAPC space
@@ -679,7 +679,7 @@ model3d.dapc.depth <- dapc(model3d.data.scaled, mad_ann_seq_core$depth)# by dept
 a_score <- optim.a.score(model3d.dapc.depth) 
 
 # Step 2: perform DAPC
-model3d.dapc.depth <- dapc(model3d.data.scaled, mad_ann_seq_core$depth, n.pca = 5, n.da = 2)
+model3d.dapc.depth <- dapc(model3d.data.scaled, mad_ann_seq_core$depth, n.pca = 3, n.da = 2)
 
 # Step 3: plot
 scatter(model3d.dapc.depth)        # Visualizes the DAPC space
@@ -702,10 +702,148 @@ scatter(model3d.dapc.depth)
 
 dev.off()
 
+#######################################################
+#### Multivariate for MPHA1 vs MPHA2 vs MPHA4 only ####
+#######################################################
+mpha_data <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MPHA.ln1', 'MPHA.ln2', 'MPHA.ln4'), c("label", "depth", "site", "dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")] # subsets data to only MPHA1, MPHA2 and MPHA4; 173 x 8
 
+# MDS analysis
+dist_matrix <- dist(mpha_data[,-c(1:3)], method = "euclidean")
 
+mds_mpha <- cmdscale(dist_matrix, eig = TRUE)
 
+mds_distances <- mds_mpha$points
+shepard_df <- data.frame(Original = as.vector(dist_matrix), MDS = as.vector(dist(mds_distances)))
 
+ggplot(shepard_df, aes(x = Original, y = MDS)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  labs(title = "Shepard Plot: Original vs. MDS Distances") +
+  theme_minimal() # checks linearity, linear correlation so MDS is appropriate
+
+# Fit environmental variables to the MDS space
+env_fit <- envfit(mds_mpha$points, mpha_data[,-c(1:3)], permutations = 999)
+
+# Extract arrow scores
+arrow_scores <- as.data.frame(scores(env_fit, display = "vectors"))  # Extract coordinates
+arrow_scores$variable <- rownames(arrow_scores)  # Add variable names
+
+# Filter for significant vetors
+significant_arrows <- arrow_scores[env_fit$vectors$pvals < 0.05, ]
+
+# All colored by species
+# Interpretation: elevation is perfectly correlated with MDS1, gapF_fill is perfectly correlated with MDS2, rest of the variables have low correlation with both axes
+png(file=here("3D_models/figures/mds_mpha_species.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 10), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  xpd = TRUE
+)
+
+plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, ylim = c(-1, 0.6))
+arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
+text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
+legend('topright', inset = c(-0.3,0), legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, title = 'Species')
+
+dev.off()
+
+# All colored by depth
+png(file=here("3D_models/figures/mds_mpha_depth.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 6), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  xpd = TRUE
+)
+
+plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, ylim = c(-1, 0.6))
+arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
+text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
+legend('topright', inset = c(-0.15,0), legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, title = 'Depth')
+
+dev.off()
+
+# PCA analysis: correlation matrix
+pca_mpha <- prcomp(mpha_data[,-c(1:3)], center = TRUE, scale. = TRUE) # correlation matrix pca
+
+summ <- summary(pca_mpha) # calculates variance
+summ$importance
+
+png(file=here("3D_models/figures/pca_mpha.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow = c(2,2)
+)
+
+plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Depth')
+legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
+
+plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Species')
+legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.6)
+
+plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6.1%)', main = 'Sites')
+legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
+
+dev.off()
+
+# DAPC analysis by species
+# Step 1: scale data & perform PCA
+model3d.data.mpha.scaled <- scale(mpha_data[, -c(1:3)])
+model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label)# by species
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(model3d.dapc.mpha.species) 
+
+# Step 2: perform DAPC
+model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label, n.pca = 4, n.da = 2)
+
+# Step 3: plot
+scatter(model3d.dapc.mpha.species)        # Visualizes the DAPC space
+compoplot(model3d.dapc.mpha.species)      # Shows posterior probabilities of group assignment
+
+# DAPC analysis by depth
+# Step 1: scale data & perform PCA
+model3d.data.mpha.scaled <- scale(mpha_data[, -c(1:3)])
+model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth)# by depth
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(model3d.dapc.mpha.depth) 
+
+# Step 2: perform DAPC
+model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth, n.pca = 4, n.da = 2)
+
+# Step 3: plot
+scatter(model3d.dapc.mpha.depth)        # Visualizes the DAPC space
+compoplot(model3d.dapc.mpha.depth)      # Shows posterior probabilities of group assignment
+
+# Plot a priori DAPCs for MPHA and depth together
+png(file=here("3D_models/figures/dapc_mpha.png"), width=9, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow = c(1,2)
+)
+
+scatter(model3d.dapc.mpha.species)  
+scatter(model3d.dapc.mpha.depth)  
+
+dev.off()
 
 
 

@@ -16,6 +16,8 @@ library(cluster)
 library(effectsize)
 library(MASS)
 library(vegan)
+library(adegenet)
+library(factoextra)
 
 #### Functions ####
 add.alpha <- function(col, alpha=1){
@@ -121,7 +123,11 @@ aggregate(x=mad_ann_seq_core$gapF_fill,
           by=list(mad_ann_seq_core$label,mad_ann_seq_core$depth, mad_ann_seq_core$site),
           FUN=mean)
 
-#### Quick facet plot for each unique site/depth combination. There is some variation in the pattern between sites ####
+###############################
+#### Univariate approaches ####
+###############################
+
+#Quick facet plot for each unique site/depth combination. There is some variation in the pattern between sites
 # plot_boxplot_facet <- function(df, y_var) {
 #   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
 #     geom_boxplot(alpha = 1, outlier.shape = NA) +
@@ -308,7 +314,7 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
 
-#### Aggregate data across sites by depth, with an option for ANOVA ####
+# Aggregate data across sites by depth, with an option for ANOVA
 # plot_boxplot_by_depth <- function(df, y_var) {
 #   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
 #     geom_boxplot(alpha = 1, outlier.shape = NA) +
@@ -514,10 +520,10 @@ dev.off()
 # MDS analysis
 dist_matrix <- dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], method = "euclidean")
 
-mds_mad <- cmdscale(dist(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")]), k = 2, eig = TRUE)
+mds_mad <- cmdscale(dist_matrix, eig = TRUE)
 
-mds_distances <- dist(mds_mad$points)
-shepard_df <- data.frame(Original = as.vector(dist_matrix), MDS = as.vector(mds_distances))
+mds_distances <- mds_mad$points
+shepard_df <- data.frame(Original = as.vector(dist_matrix), MDS = as.vector(dist(mds_distances)))
 
 ggplot(shepard_df, aes(x = Original, y = MDS)) +
   geom_point() +
@@ -536,6 +542,7 @@ arrow_scores$variable <- rownames(arrow_scores)  # Add variable names
 significant_arrows <- arrow_scores[env_fit$vectors$pvals < 0.05, ]
 
 # All colored by species
+# Interpretation: elevation is perfectly correlated with MDS1, gapF_fill is perfectly correlated with MDS2, rest of the variables have low correlation with both axes
 png(file=here("3D_models/figures/mds_all_species.png"), width=8, height=6, res=300, units="in")
 
 par(
@@ -620,8 +627,11 @@ ggplot(nmds_scores, aes(NMDS1, NMDS2, color = depth)) +
   theme_minimal() +
   labs(title = "NMDS Ordination by depth")
 
-# PCA analysis
-pca_mad <- prcomp(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], center = TRUE, scale. = TRUE)
+# PCA analysis: correlation matrix
+pca_mad <- prcomp(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")], center = TRUE, scale. = TRUE) # correlation matrix pca
+
+summ <- summary(pca_mad) # calculates variance
+summ$importance
 
 png(file=here("3D_models/figures/pca.png"), width=8, height=8, res=300, units="in")
 
@@ -645,8 +655,62 @@ legend('topleft', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), c
 
 dev.off()
 
-summ <- summary(pca_mad)
-summ$importance
+# DAPC analysis by species
+# Step 1: scale data & perform PCA
+model3d.data.scaled <- scale(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")])
+model3d.dapc.species <- dapc(model3d.data.scaled, mad_ann_seq_core$label)# by species
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(model3d.dapc.species) 
+
+# Step 2: perform DAPC
+model3d.dapc.species <- dapc(model3d.data.scaled, mad_ann_seq_core$label, n.pca = 5, n.da = 2)
+
+# Step 3: plot
+scatter(model3d.dapc.species)        # Visualizes the DAPC space
+compoplot(model3d.dapc.species)      # Shows posterior probabilities of group assignment
+
+# DAPC analysis by depth
+# Step 1: scale data & perform PCA
+model3d.data.scaled <- scale(mad_ann_seq_core[, c("dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")])
+model3d.dapc.depth <- dapc(model3d.data.scaled, mad_ann_seq_core$depth)# by depth
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(model3d.dapc.depth) 
+
+# Step 2: perform DAPC
+model3d.dapc.depth <- dapc(model3d.data.scaled, mad_ann_seq_core$depth, n.pca = 5, n.da = 2)
+
+# Step 3: plot
+scatter(model3d.dapc.depth)        # Visualizes the DAPC space
+compoplot(model3d.dapc.depth)      # Shows posterior probabilities of group assignment
+
+# Plot a priori DAPCs for species and depth together
+png(file=here("3D_models/figures/dapc.png"), width=9, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow = c(1,2)
+)
+
+scatter(model3d.dapc.species)  
+scatter(model3d.dapc.depth)  
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
 
 
 

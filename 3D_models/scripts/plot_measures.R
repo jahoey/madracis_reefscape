@@ -788,13 +788,13 @@ par(
 )
 
 plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Depth')
-legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
+legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
 
 plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Species')
-legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.6)
+legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.9)
 
 plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6.1%)', main = 'Sites')
-legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
+legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.65)
 
 dev.off()
 

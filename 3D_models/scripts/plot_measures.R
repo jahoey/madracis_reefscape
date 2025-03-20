@@ -845,6 +845,50 @@ scatter(model3d.dapc.mpha.depth)
 
 dev.off()
 
+# DAPC analysis by species AND depth
+# Data manipulation: create a new column for unique species & depth
+mpha_data$label_depth <- paste(mpha_data$label, mpha_data$depth, sep = '_')
+mpha_data$label_depth <- factor(mpha_data$label_depth, levels = c("MPHA.ln1_5", "MPHA.ln1_10", "MPHA.ln1_20", "MPHA.ln2_10", "MPHA.ln2_20", "MPHA.ln2_40", "MPHA.ln2_60", "MPHA.ln4_40", "MPHA.ln4_60"))
+
+# Step 1: scale data & perform PCA
+model3d.data.mpha.scaled <- scale(mpha_data[, -c(1:3, 9)])
+model3d.dapc.mpha.speciesdepth <- dapc(model3d.data.mpha.scaled, mpha_data$label_depth)# by species/depth
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(model3d.dapc.mpha.speciesdepth) 
+
+# Step 2: perform DAPC
+model3d.dapc.mpha.speciesdepth <- dapc(model3d.data.mpha.scaled, mpha_data$label_depth, n.pca = 4, n.da = 2)
+
+# Step 3: plot
+scatter(model3d.dapc.mpha.speciesdepth, clabel = FALSE)        # Visualizes the DAPC space
+compoplot(model3d.dapc.mpha.speciesdepth)      # Shows posterior probabilities of group assignment
+
+# Step 4: better plot
+table(mpha_data$label, mpha_data$depth)
+colors_mpha_depth <- c("#A6CEE3", "#1F78B4", "blue4", "greenyellow", "#B2DF8A", "#33A02C", "darkgreen", "#FDBF6F", "#FF7F00")
+var_explained <- round(100 * model3d.dapc.mpha.speciesdepth$eig / sum(model3d.dapc.mpha.speciesdepth$eig), 1)
+
+# Plot a priori DAPCs for MPHA and depth together
+png(file=here("3D_models/figures/dapc_mphabydepth.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 10), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  xpd = TRUE
+)
+
+plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 82.5%', ylab = 'LD2, variance explained 14%')
+
+legend('topright', inset = c(-0.35,0), legend = c("MPHA.ln1_5", "MPHA.ln1_10", "MPHA.ln1_20",  "MPHA.ln2_10", "MPHA.ln2_20", "MPHA.ln2_40", "MPHA.ln2_60", "MPHA.ln4_40", "MPHA.ln4_60"), col = add.alpha(colors_mpha_depth, 0.7), pch = 19, title = 'Species by Depth')
+
+dev.off()
+
+
+
 
 
 

@@ -857,6 +857,13 @@ model3d.dapc.mpha.speciesdepth <- dapc(model3d.data.mpha.scaled, mpha_data$label
 # Choose number of PCs to retain
 a_score <- optim.a.score(model3d.dapc.mpha.speciesdepth) 
 
+# cross validation, dataset too small for this method to work super well
+set.seed(999)
+datax <- xvalDapc(model3d.data.mpha.scaled, mpha_data$label_depth)
+system.time(datax <- xvalDapc(model3d.data.mpha.scaled, mpha_data$label_depth,
+                              n.pca = 1:5, n.rep = 1000,
+                              parallel = "multicore", ncpus = 4L)) #5 PCs
+
 # Step 2: perform DAPC
 model3d.dapc.mpha.speciesdepth <- dapc(model3d.data.mpha.scaled, mpha_data$label_depth, n.pca = 4, n.da = 2)
 
@@ -868,6 +875,11 @@ compoplot(model3d.dapc.mpha.speciesdepth)      # Shows posterior probabilities o
 table(mpha_data$label, mpha_data$depth)
 colors_mpha_depth <- c("#A6CEE3", "#1F78B4", "blue4", "greenyellow", "#B2DF8A", "#33A02C", "darkgreen", "#FDBF6F", "#FF7F00")
 var_explained <- round(100 * model3d.dapc.mpha.speciesdepth$eig / sum(model3d.dapc.mpha.speciesdepth$eig), 1)
+
+# Step 5: how correct is the DAPC assignment?
+summary(model3d.dapc.mpha.speciesdepth)
+table(model3d.dapc.mpha.speciesdepth$grp, model3d.dapc.mpha.speciesdepth$assign)
+assignplot(model3d.dapc.mpha.speciesdepth) #blue crosses (prior) on red rectangles (posterior; red=1, white=0) means DAPC posterior classification is consistent with genetic species identify
 
 # Plot a priori DAPCs for MPHA and depth together
 png(file=here("3D_models/figures/dapc_mphabydepth.png"), width=8, height=6, res=300, units="in")

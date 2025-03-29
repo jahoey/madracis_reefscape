@@ -899,6 +899,139 @@ legend('topright', inset = c(-0.35,0), legend = c("MPHA.ln1_5", "MPHA.ln1_10", "
 
 dev.off()
 
+# Separate DAPC by depth (doesn't work super well because only two groups, so therefore 1 DF)
+# Data by depth
+mpha5 <-  mpha_data[which(mpha_data$depth == 5),] # only MPHA.ln1
+mpha10 <- mpha_data[which(mpha_data$depth == 10),]
+mpha20 <- mpha_data[which(mpha_data$depth == 20),]
+mpha40 <- mpha_data[which(mpha_data$depth == 40),]
+mpha60 <- mpha_data[which(mpha_data$depth == 60),]
+
+# Step 1: scale data & perform PCA
+mpha10.scaled <- scale(mpha10[, -c(1:3)])
+mpha10.dapc <- dapc(mpha10.scaled, mpha10$label)# by species
+
+mpha20.scaled <- scale(mpha20[, -c(1:3)])
+mpha20.dapc <- dapc(mpha20.scaled, mpha20$label)# by species
+
+mpha40.scaled <- scale(mpha40[, -c(1:3)])
+mpha40.dapc <- dapc(mpha40.scaled, mpha40$label)# by species
+
+mpha60.scaled <- scale(mpha60[, -c(1:3)])
+mpha60.dapc <- dapc(mpha60.scaled, mpha60$label)# by species
+
+# Choose number of PCs to retain
+a_score <- optim.a.score(mpha10.dapc) 
+a_score2 <- optim.a.score(mpha20.dapc) 
+a_score3 <- optim.a.score(mpha40.dapc) 
+a_score4 <- optim.a.score(mpha60.dapc) 
+
+# Step 2: perform DAPC
+mpha10.dapc <- dapc(mpha10.scaled, mpha10$label, n.pca = 3, n.da = 1)
+mpha20.dapc <- dapc(mpha20.scaled, mpha20$label, n.pca = 3, n.da = 1)
+mpha40.dapc <- dapc(mpha40.scaled, mpha40$label, n.pca = 3, n.da = 1)
+mpha60.dapc <- dapc(mpha60.scaled, mpha60$label, n.pca = 3, n.da = 1)
+
+# Step 3: plot
+colors_mpha10 <- c("#1F78B4", "greenyellow")
+colors_mpha20 <- c("blue4", "#B2DF8A")
+colors_mpha40 <- c("#33A02C", "#FDBF6F")
+colors_mpha60 <- c("darkgreen", "#FF7F00")
+
+scatter(mpha10.dapc, legend = TRUE, col = colors_mpha10)        # Visualizes the DAPC space; doesn't work because only 1 individual in a group
+compoplot(mpha10.dapc, col = colors_mpha10)      # Shows posterior probabilities of group assignment
+
+scatter(mpha20.dapc, legend = TRUE, col = colors_mpha20)        # Visualizes the DAPC space
+compoplot(mpha20.dapc, col = colors_mpha20)      # Shows posterior probabilities of group assignment
+
+scatter(mpha40.dapc, legend = TRUE, col = colors_mpha40)        # Visualizes the DAPC space
+compoplot(mpha40.dapc, col = colors_mpha40)      # Shows posterior probabilities of group assignment
+
+scatter(mpha60.dapc, legend = TRUE, col = colors_mpha60)        # Visualizes the DAPC space; doesn't work because only 1 individual in a group
+compoplot(mpha60.dapc, col = colors_mpha60)      # Shows posterior probabilities of group assignment
+
+# Step 4: how correct is the DAPC assignment?
+summary(mpha20.dapc)
+table(mpha20.dapc$grp, mpha20.dapc$assign)
+assignplot(mpha20.dapc) #blue crosses (prior) on red rectangles (posterior; red=1, white=0) means DAPC posterior classification is consistent with genetic species identify
+
+# Plot a priori DAPCs for MPHA and depth together
+png(file=here("3D_models/figures/dapc_mphaeverydepth_density.png"), width=10, height=5, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow=c(1,2)
+)
+
+scatter(mpha20.dapc, legend = TRUE, col = colors_mpha20)
+mtext("20m", side = 3, line = 1, cex = 1.5, font = 2)
+
+scatter(mpha40.dapc, legend = TRUE, col = colors_mpha40)
+mtext("40m", side = 3, line = 1, cex = 1.5, font = 2)
+
+dev.off()
+
+png(file=here("3D_models/figures/dapc_mphaeverydepth_compoplot.png"), width=8, height=6, res=300, units="in")
+
+par(
+  mar=c(2, 5, 2.5, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow=c(2,2)
+)
+
+compoplot(mpha10.dapc, col = colors_mpha10)
+mtext("10m", side = 3, line = 1, cex = 1, font = 2)
+
+compoplot(mpha20.dapc, col = colors_mpha20)
+mtext("20m", side = 3, line = 1, cex = 1, font = 2)
+
+compoplot(mpha40.dapc, col = colors_mpha40)
+mtext("20m", side = 3, line = 1, cex = 1, font = 2)
+
+compoplot(mpha60.dapc, col = colors_mpha60)
+mtext("60m", side = 3, line = 1, cex = 1, font = 2)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

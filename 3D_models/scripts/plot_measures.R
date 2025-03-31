@@ -648,13 +648,13 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Depth')
+plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Depth')
 legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
 
-plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Species')
+plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Species')
 legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.6)
 
-plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (39.2%)', ylab = 'PC 2 (21.7%)', main = 'Sites')
+plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Sites')
 legend('topleft', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
 
 dev.off()
@@ -791,13 +791,13 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Depth')
+plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Depth')
 legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
 
-plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6%)', main = 'Species')
+plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Species')
 legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.9)
 
-plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (42.4%)', ylab = 'PC 2 (19.6.1%)', main = 'Sites')
+plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Sites')
 legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.65)
 
 dev.off()
@@ -866,7 +866,7 @@ set.seed(999)
 datax <- xvalDapc(model3d.data.mpha.scaled, mpha_data$label_depth)
 system.time(datax <- xvalDapc(model3d.data.mpha.scaled, mpha_data$label_depth,
                               n.pca = 1:5, n.rep = 1000,
-                              parallel = "multicore", ncpus = 4L)) #5 PCs
+                              parallel = "multicore", ncpus = 4L)) #4 PCs
 
 # Step 2: perform DAPC
 model3d.dapc.mpha.speciesdepth <- dapc(model3d.data.mpha.scaled, mpha_data$label_depth, n.pca = 4, n.da = 2)
@@ -897,7 +897,7 @@ par(
   xpd = TRUE
 )
 
-plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 82.5%', ylab = 'LD2, variance explained 14%')
+plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 82.7%', ylab = 'LD2, variance explained 13.2%')
 
 legend('topright', inset = c(-0.35,0), legend = c("MPHA.ln1_5", "MPHA.ln1_10", "MPHA.ln1_20",  "MPHA.ln2_10", "MPHA.ln2_20", "MPHA.ln2_40", "MPHA.ln2_60", "MPHA.ln4_40", "MPHA.ln4_60"), col = add.alpha(colors_mpha_depth, 0.7), pch = 19, title = 'Species by Depth')
 
@@ -912,16 +912,16 @@ mpha40 <- mpha_data[which(mpha_data$depth == 40),]
 mpha60 <- mpha_data[which(mpha_data$depth == 60),]
 
 # Step 1: scale data & perform PCA
-mpha10.scaled <- scale(mpha10[, -c(1:3)])
+mpha10.scaled <- scale(mpha10[, -c(1:3,9)])
 mpha10.dapc <- dapc(mpha10.scaled, mpha10$label)# by species
 
-mpha20.scaled <- scale(mpha20[, -c(1:3)])
+mpha20.scaled <- scale(mpha20[, -c(1:3,9)])
 mpha20.dapc <- dapc(mpha20.scaled, mpha20$label)# by species
 
-mpha40.scaled <- scale(mpha40[, -c(1:3)])
+mpha40.scaled <- scale(mpha40[, -c(1:3,9)])
 mpha40.dapc <- dapc(mpha40.scaled, mpha40$label)# by species
 
-mpha60.scaled <- scale(mpha60[, -c(1:3)])
+mpha60.scaled <- scale(mpha60[, -c(1:3,9)])
 mpha60.dapc <- dapc(mpha60.scaled, mpha60$label)# by species
 
 # Choose number of PCs to retain

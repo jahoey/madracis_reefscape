@@ -102,10 +102,14 @@ dim(sna_20) #46x24
 dim(sna_40) #5x24
 dim(wat_05) #2x24
 
-#### Combine the separate objects into one and filter ####
+#### Combine the separate objects into one, manipulate and filter ####
 coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
 
-mad_ann <- coral_ann[!coral_ann$label %in% c('PPOR', 'SINT'),] #409x24, remove corals that aren't Madracis
+# Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180
+coral_ann2 <- coral_ann %>%
+  mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
+
+mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #409x24, remove corals that aren't Madracis
 
 mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 349x24
 

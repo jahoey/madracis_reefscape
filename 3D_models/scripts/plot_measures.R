@@ -82,40 +82,52 @@ for (file in csv_files) {
 }
 
 # Verify that the objects have been created and they have the correct dimensions; these are for radius 0.2
-dim(dir_05) #5x24
+dim(dir_05) #5x25
 # dim(dir_20)
-dim(est_05) #9x24
-dim(est_10) #66x24
-dim(est_20) #54x24
-dim(est_40) #32x24
-dim(est_60) #14x24
-dim(hul_20) #21x24
-dim(kal_05) #13x24
-dim(kal_10) #55x24
-dim(kal_20) #48x24
-dim(kal_40) #19x24
-dim(sea_10) #6x24
-dim(sea_20) #12x24
-# dim(sna_05) #10x20
-dim(sna_10) #15x24
-dim(sna_20) #46x24
-dim(sna_40) #5x24
-dim(wat_05) #2x24
+dim(est_05) #9x25
+dim(est_10) #66x25
+dim(est_20) #54x25
+dim(est_40) #32x25
+dim(est_60) #14x25
+#dim(hul_05)
+#dim(hul_20) #21x25
+dim(kal_05) #13x25
+dim(kal_10) #55x25
+dim(kal_20) #48x25
+dim(kal_40) #19x25
+dim(sea_10) #6x25
+dim(sea_20) #12x25
+# dim(sna_05) #10x25
+dim(sna_10) #15x25
+dim(sna_20) #46x25
+dim(sna_40) #5x25
+#dim(wat_05) #2x25
+#dim(wat_20)
 
 #### Combine the separate objects into one, manipulate and filter ####
-coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
+# coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
 
-# Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180
-coral_ann2 <- coral_ann %>%
-  mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
+coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40) #399 x 26
 
-mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #409x24, remove corals that aren't Madracis
+# Add labels from metadata
+# Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
+coral_ann2 <- merge(coral_ann, metadata[, c("ID", "Species_mpha")],
+                    by.x = "id", by.y = "ID", all.x = TRUE)
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 349x24
+# Update the 'label' column with Species_mpha
+coral_ann2$label <- coral_ann2$Species_mpha
 
-mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 342x24
+# # Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180. No longer needed as of April 2025, since we now want to know if coral is angled up or angled down.
+# coral_ann3 <- coral_ann2 %>%
+#   mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
 
-# See if the unknowns have a more updated ID
+mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, remove corals that aren't Madracis
+
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 331x26
+
+mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 324x26
+
+# See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
 metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1],]
 
@@ -259,6 +271,7 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14 # point size, which is the font size
 )
+
 plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_fill")
 
 dev.off()
@@ -272,6 +285,7 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14 # point size, which is the font size
 )
+
 plot_boxplot_facet_anova(mad_ann_seq_core, "gapF_raw")
 
 dev.off()
@@ -461,6 +475,34 @@ par(
 )
 
 plot_boxplot_anova(mad_ann_seq_core, "luminance")
+
+dev.off()
+
+png(file=here("3D_models/figures/vector_disp_bydepth_anova.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core, "vector_disp")
+
+dev.off()
+
+png(file=here("3D_models/figures/substrate_angle_bydepth_anova.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
 

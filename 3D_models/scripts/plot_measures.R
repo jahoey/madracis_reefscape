@@ -506,6 +506,49 @@ plot_boxplot_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
 
+#####################################
+#### ANOVA, look at main effects ####
+#####################################
+# Gap Fraction Fill
+gapF_fill_lm <- lm(gapF_fill ~ label + site + depth, data = mad_ann_seq_core)
+summary(gapF_fill_lm)
+
+par(mfrow = c(1,2)) # combine plots
+hist(gapF_fill_lm$residuals) # histogram
+qqPlot(gapF_fill_lm$residuals, id = TRUE) # qq plot: id = FALSE to remove point identification
+
+shapiro.test(gapF_fill_lm$residuals) # formal Shapiro-Wilk normality test
+
+boxplot(gapF_fill ~ label, data = mad_ann_seq_core)
+dotplot(gapF_fill ~ label, data = mad_ann_seq_core)
+
+boxplot(gapF_fill ~ site, data = mad_ann_seq_core)
+dotplot(gapF_fill ~ site, data = mad_ann_seq_core)
+
+leveneTest(gapF_fill ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
+
+Anova(gapF_fill_lm) # only species & depth, okay to merge sites
+
+# Dev rug
+dev_rug_lm <- lm(dev_rug ~ label + site + depth, data = mad_ann_seq_core)
+summary(dev_rug_lm)
+Anova(dev_rug_lm) # only depth has a main effect
+
+# Vector dispersion
+vector_disp_lm <- lm(vector_disp ~ label + site + depth, data = mad_ann_seq_core)
+summary(vector_disp_lm)
+Anova(vector_disp_lm) # site and depth has a main effect
+
+# Luminance
+luminance_lm <- lm(luminance ~ label + site + depth, data = mad_ann_seq_core)
+summary(luminance_lm)
+Anova(luminance_lm) # everything has a main effect
+
+# Elevation/substrate angle
+elevation_lm <- lm(elevation ~ label + site + depth, data = mad_ann_seq_core)
+summary(elevation_lm)
+Anova(elevation_lm) # everything has a main effect
+
 #################################
 #### Multivariate approaches ####
 #################################
@@ -600,7 +643,7 @@ par(
   xpd = TRUE
 )
 
-plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, ylim = c(-0.5, 1.2))
+plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, ylim = c(-1.1, 0.7))
 arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
 text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
 legend('topright', inset = c(-0.3,0), legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, title = 'Species')
@@ -619,7 +662,7 @@ par(
   xpd = TRUE
 )
 
-plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, ylim = c(-0.5, 1.2))
+plot(mds_mad$points[,1], mds_mad$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, ylim = c(-1.1, 0.7))
 arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
 text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
 legend('topright', inset = c(-0.15,0), legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, title = 'Depth')
@@ -690,13 +733,13 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Depth')
+plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Depth')
 legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
 
-plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Species')
+plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Species')
 legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.6)
 
-plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (39.9%)', ylab = 'PC 2 (22.2%)', main = 'Sites')
+plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Sites')
 legend('topleft', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
 
 dev.off()
@@ -751,7 +794,7 @@ dev.off()
 #######################################################
 #### Multivariate for MPHA1 vs MPHA2 vs MPHA4 only ####
 #######################################################
-mpha_data <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MPHA.ln1', 'MPHA.ln2', 'MPHA.ln4'), c("label", "depth", "site", "dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")] # subsets data to only MPHA1, MPHA2 and MPHA4; 173 x 8
+mpha_data <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MPHA.ln1', 'MPHA.ln2', 'MPHA.ln4'), c("label", "depth", "site", "dev_rug", "elevation", "gapF_fill", "luminance", "vector_disp")] # subsets data to only MPHA1, MPHA2 and MPHA4; 164 x 8
 
 # MDS analysis
 dist_matrix <- dist(mpha_data[,-c(1:3)], method = "euclidean")
@@ -790,7 +833,7 @@ par(
   xpd = TRUE
 )
 
-plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, ylim = c(-1, 0.6))
+plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, ylim = c(-0.6, 1.1))
 arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
 text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
 legend('topright', inset = c(-0.3,0), legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, title = 'Species')
@@ -809,7 +852,7 @@ par(
   xpd = TRUE
 )
 
-plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, ylim = c(-1, 0.6))
+plot(mds_mpha$points[,1], mds_mpha$points[,2], xlab = 'MDS 1', ylab = 'MDS 2', col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, ylim = c(-0.6, 1.1))
 arrows(0, 0, significant_arrows$Dim1, significant_arrows$Dim2, length = 0.1, col = "black", lwd = 1.5)
 text(significant_arrows$Dim1, significant_arrows$Dim2, labels = significant_arrows$variable, pos = 3, cex = 0.8)
 legend('topright', inset = c(-0.15,0), legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, title = 'Depth')
@@ -833,13 +876,13 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Depth')
+plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Depth')
 legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
 
-plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Species')
+plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Species')
 legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.9)
 
-plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (43.7%)', ylab = 'PC 2 (20.2%)', main = 'Sites')
+plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Sites')
 legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.65)
 
 dev.off()
@@ -853,7 +896,7 @@ model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label)# by
 a_score <- optim.a.score(model3d.dapc.mpha.species) 
 
 # Step 2: perform DAPC
-model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label, n.pca = 4, n.da = 2)
+model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label, n.pca = 2, n.da = 2)
 
 # Step 3: plot
 scatter(model3d.dapc.mpha.species)        # Visualizes the DAPC space
@@ -868,7 +911,7 @@ model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth)# by d
 a_score <- optim.a.score(model3d.dapc.mpha.depth) 
 
 # Step 2: perform DAPC
-model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth, n.pca = 4, n.da = 2)
+model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth, n.pca = 2, n.da = 2)
 
 # Step 3: plot
 scatter(model3d.dapc.mpha.depth)        # Visualizes the DAPC space
@@ -939,7 +982,7 @@ par(
   xpd = TRUE
 )
 
-plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 82.7%', ylab = 'LD2, variance explained 13.2%')
+plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 76.9%', ylab = 'LD2, variance explained 15.2%')
 
 legend('topright', inset = c(-0.35,0), legend = c("MPHA.ln1_5", "MPHA.ln1_10", "MPHA.ln1_20",  "MPHA.ln2_10", "MPHA.ln2_20", "MPHA.ln2_40", "MPHA.ln2_60", "MPHA.ln4_40", "MPHA.ln4_60"), col = add.alpha(colors_mpha_depth, 0.7), pch = 19, title = 'Species by Depth')
 

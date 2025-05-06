@@ -1,0 +1,194 @@
+# For loop all of it following re-orientation & scaling. Run as scalefactors for each site are done.
+# Import required modules
+import sys
+import logging
+import os
+import plotly.express as px
+sys.path.append(r'C:\Users\deepcat\unicorn')
+sys.path.append(r'C:\Users\deepcat\coralscape20k')
+from unicorn import *
+from coralscape20k import focal_plots, database
+
+# Set logger to verbose
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('unicorn')
+
+# Connect to database
+#focalplots = focal_plots.FocalPlots(r'Y:\focal_plots')
+markers = database.MarkerDB()
+alignments = database.AlignmentsDB()
+
+# Define the sites and their respective timepoints
+#plots = [
+#    {"name": "cur_dir_05m", "timepoint": "cur_dir_05m_20200227", "ref_timepoint": "cur_dir_05m_20200227"},
+#    {"name": "cur_dir_20m", "timepoint": "cur_dir_20m_20220517", "ref_timepoint": "cur_dir_20m_20200227"},
+#    {"name": "cur_est_05m", "timepoint": "cur_est_05m_20200219", "ref_timepoint": "cur_est_05m_20200219"},
+#    {"name": "cur_est_10m", "timepoint": "cur_est_10m_20200219", "ref_timepoint": "cur_est_10m_20200219"},
+#    {"name": "cur_est_20m", "timepoint": "cur_est_20m_20200219", "ref_timepoint": "cur_est_20m_20200219"},
+#    {"name": "cur_est_40m", "timepoint": "cur_est_40m_20220511", "ref_timepoint": "cur_est_40m_20200219"},
+#    {"name": "cur_est_60m", "timepoint": "cur_est_60m_20200302", "ref_timepoint": "cur_est_60m_20200302"},
+#    #{"name": "cur_hul_05m", "timepoint": "cur_hul_05m_20200301", "ref_timepoint": "cur_hul_05m_20200301"}, # no up vector yet
+#    {"name": "cur_hul_20m", "timepoint": "cur_hul_20m_20200301", "ref_timepoint": "cur_hul_20m_20200301"},
+#    {"name": "cur_kal_05m", "timepoint": "cur_kal_05m_20200214", "ref_timepoint": "cur_kal_05m_20200214"}, # no alignment for 202304 - but also says failed model?
+#    {"name": "cur_kal_10m", "timepoint": "cur_kal_10m_20200214", "ref_timepoint": "cur_kal_10m_20200214"},
+#    {"name": "cur_kal_20m", "timepoint": "cur_kal_20m_20200214", "ref_timepoint": "cur_kal_20m_20200214"},
+#    {"name": "cur_kal_40m", "timepoint": "cur_kal_40m_20200214", "ref_timepoint": "cur_kal_40m_20200214"},
+#    {"name": "cur_sea_10m", "timepoint": "cur_sea_10m_20200221", "ref_timepoint": "cur_sea_10m_20200221"},
+#    {"name": "cur_sea_20m", "timepoint": "cur_sea_20m_20200221", "ref_timepoint": "cur_sea_20m_20200221"},
+#    #{"name": "cur_sna_05m", "timepoint": "cur_sna_05m_20201202", "ref_timepoint": "cur_sna_05m_20200303"}, # no alignment for 202304 - but also says failed model?
+#    {"name": "cur_sna_10m", "timepoint": "cur_sna_10m_20200303", "ref_timepoint": "cur_sna_10m_20200303"},
+#    {"name": "cur_sna_20m", "timepoint": "cur_sna_20m_20200303", "ref_timepoint": "cur_sna_20m_20200303"},
+#    {"name": "cur_sna_40m", "timepoint": "cur_sna_40m_20200216", "ref_timepoint": "cur_sna_40m_20200216"},
+#    {"name": "cur_wat_05m", "timepoint": "cur_wat_05m_20201201", "ref_timepoint": "cur_wat_05m_20200225"},
+#    #{"name": "cur_wat_20m", "timepoint": "cur_wat_20m_20201201", "ref_timepoint": "cur_wat_20m_20200225"} # no up vector yet
+#]
+
+# After re-orientation & scaling: still need to do cur_sna_05m, cur_hul and cur_wat. dir_20 having Nan issues for hab measures?
+#plots = [{"name": "cur_dir_20m", "timepoint": "cur_dir_20m_20220517", "ref_timepoint": "cur_dir_20m_20200227"}]
+plots = [{"name": "cur_dir_05m", "timepoint": "cur_dir_05m_20200227", "ref_timepoint": "cur_dir_05m_20200227"},
+       {"name": "cur_est_05m", "timepoint": "cur_est_05m_20200219", "ref_timepoint": "cur_est_05m_20200219"},
+       {"name": "cur_est_10m", "timepoint": "cur_est_10m_20200219", "ref_timepoint": "cur_est_10m_20200219"},
+       {"name": "cur_est_20m", "timepoint": "cur_est_20m_20200219", "ref_timepoint": "cur_est_20m_20200219"},
+       {"name": "cur_est_40m", "timepoint": "cur_est_40m_20220511", "ref_timepoint": "cur_est_40m_20200219"},
+       {"name": "cur_est_60m", "timepoint": "cur_est_60m_20200302", "ref_timepoint": "cur_est_60m_20200302"},
+       {"name": "cur_sna_10m", "timepoint": "cur_sna_10m_20200303", "ref_timepoint": "cur_sna_10m_20200303"},
+       {"name": "cur_sna_20m", "timepoint": "cur_sna_20m_20200303", "ref_timepoint": "cur_sna_20m_20200303"},
+       {"name": "cur_sna_40m", "timepoint": "cur_sna_40m_20200216", "ref_timepoint": "cur_sna_40m_20200216"},
+       {"name": "cur_kal_05m", "timepoint": "cur_kal_05m_20200214", "ref_timepoint": "cur_kal_05m_20200214"},
+       {"name": "cur_kal_10m", "timepoint": "cur_kal_10m_20200214", "ref_timepoint": "cur_kal_10m_20200214"},
+       {"name": "cur_kal_20m", "timepoint": "cur_kal_20m_20200214", "ref_timepoint": "cur_kal_20m_20200214"},
+       {"name": "cur_kal_40m", "timepoint": "cur_kal_40m_20200214", "ref_timepoint": "cur_kal_40m_20200214"},
+       {"name": "cur_sea_10m", "timepoint": "cur_sea_10m_20200221", "ref_timepoint": "cur_sea_10m_20200221"},
+       {"name": "cur_sea_20m", "timepoint": "cur_sea_20m_20200221", "ref_timepoint": "cur_sea_20m_20200221"}]
+
+#plots = [{"name": "cur_kal_10m", "timepoint": "cur_kal_10m_20200214", "ref_timepoint": "cur_kal_10m_20200214"},
+#        {"name": "cur_kal_20m", "timepoint": "cur_kal_20m_20200214", "ref_timepoint": "cur_kal_20m_20200214"},
+#        {"name": "cur_kal_40m", "timepoint": "cur_kal_40m_20200214", "ref_timepoint": "cur_kal_40m_20200214"},
+#        {"name": "cur_sea_10m", "timepoint": "cur_sea_10m_20200221", "ref_timepoint": "cur_sea_10m_20200221"}]
+
+# Output directories
+distmat_output_dir = r"C:\Users\deepcat\projects\unicorn_notebooks\jennifer\output\distmat"
+hab_measures_output_dir = r"output\hab_measures"
+
+# Ensure output directories exist
+os.makedirs(distmat_output_dir, exist_ok=True)
+os.makedirs(hab_measures_output_dir, exist_ok=True)
+
+# Loop through each site and process its timepoint
+for plot in plots:
+    ### UPDATED CODE - START
+    site_name, timepoint_key, ref_timepoint_key = plot['name'], plot['timepoint'], plot['ref_timepoint']
+    path = r'Y:\focal_plots\{0}\{1}'.format(site_name[0:7], site_name)
+    logger.info(f"Processing site: {site_name} at timepoint: {timepoint_key}")
+
+    focalplot = focal_plots.FocalPlot(site_name, path)
+    # Timepoint
+    timepoint = focalplot.timepoints[timepoint_key]
+    # Ref timepoint
+    ref_timepoint = focalplot.timepoints[ref_timepoint_key]
+    ref_scale_factor = ref_timepoint.get_scale_factor_from_file()[0]
+    # Up vector timepoint
+    up_vector_timepoint_name, [up_vector, depth_offset] = focalplot.find_up_vectors(markers)[0]
+    upvector_timepoint = focalplot.timepoints[up_vector_timepoint_name] # swapped this line and the line below
+    upvector_scale_factor = upvector_timepoint.get_scale_factor_from_file()[0]
+    
+    upvector_pcd = PointCloud(upvector_timepoint.dec7m_ply)
+    upvector_pcd.apply_orientation_transforms(upvector_scale_factor, np.asarray(up_vector, dtype=float), float(depth_offset))
+
+    pcd_ref = PointCloud(ref_timepoint.dec7m_ply)
+    pcd_ref.apply_transform(np.linalg.inv(alignments.ref_transform(upvector_timepoint.name)))
+    pcd_ref.apply_transform(upvector_pcd.world_transform)
+
+    annotation_file = f"annotations\{timepoint_key}_updated_spp.csv"
+    annotations = Annotations(annotation_file, header=False)
+    if timepoint.name != ref_timepoint.name:
+        logger.info(f"Converted annotations from {timepoint.name} to {ref_timepoint.name}")
+        annotations.transform_coords(alignments.timepoints[timepoint_key][ref_timepoint_key])
+    annotations.transform_coords(np.linalg.inv(alignments.ref_transform(upvector_timepoint.name)))
+    annotations.transform_coords(upvector_pcd.world_transform)
+
+    ### UPDATED CODE - END
+    site_name, timepoint_key, ref_timepoint_key = plot['name'], plot['timepoint'], plot['ref_timepoint']
+    path = r'Y:\focal_plots\{0}\{1}'.format(site_name[0:7], site_name)
+    logger.info(f"Processing site: {site_name} at timepoint: {timepoint_key}")
+    
+    focalplot = focal_plots.FocalPlot(site_name, path)
+    timepoint = focalplot.timepoints[timepoint_key]
+    ref_timepoint = focalplot.timepoints[ref_timepoint_key]
+    
+    # Import annotations for the current plot
+    annotation_file = f"annotations\{timepoint_key}_updated_spp.csv"
+    annotations = Annotations(annotation_file, header=False)
+    if timepoint.name != ref_timepoint.name:
+        logger.info(f"Converted annotations from {timepoint.name} to {ref_timepoint.name}")
+        annotations.transform_coords(alignments.timepoints[timepoint_key][ref_timepoint_key])
+        print(alignments.timepoints[timepoint_key][ref_timepoint_key]) # outputs transformation from timepoint to timepoint
+
+    # Determine scaling factor and upvector for orientation
+    scale_factor = ref_timepoint.get_scale_factor_from_file()[0]
+    up_vectors = focalplot.find_up_vectors(markers)
+    up_vector = dotprod(up_vectors[0][1][0], alignments.ref_transform(up_vectors[0][0]))
+    depth_offset = float(up_vectors[0][1][1])
+
+    # Load pointcloud and transform using up_vector and scale_factor
+    pcd = PointCloud(ref_timepoint.dec7m_ply)
+    pcd.apply_orientation_transforms(scale_factor, up_vector, depth_offset)
+    annotations.transform_coords(pcd.world_transform)
+
+    # # Define site prefix and depth for camera path
+    site_prefix = "_".join(site_name.split("_")[:2])
+    depth = site_name.split("_")[2]
+    
+    # Load and transform cameras for elevation visualizations
+    cams = Cameras(timepoint.cams_meta, timepoint.cams_xml)
+    cams.set_base_path(rf"Y:/focal_plots/{site_prefix}/{site_prefix}_{depth}")
+    cams.transform_coords(pcd.world_transform)
+    
+    # Calculate distance matrix
+    distance_matrix = annotations.get_eucl_distance_matrix()
+    distmat_output_path = os.path.join(distmat_output_dir, f"{site_name}_distmat.csv")
+    distance_matrix.to_csv(distmat_output_path, index=True, index_label='')
+    logger.info(f"Saved distance matrix to {distmat_output_path}")
+    
+    # Perform measurements for measures that don't depend on radii
+    print("Point cloud size:", len(pcd.points))  # Check if the point cloud has points
+    print("Input points to PCA:", pcd.points[:10])  # Log the first few points before PCA, maybe there are NAs in here?
+    annotations.get_point_cloud_by_radius(pcd, 0.2)  # Adjust radius as needed for calculating rugosity
+    annotations.measure_all(calc_gap_fraction, pcd.simple_pcd, 200)  # Measure gap fraction
+    annotations.measure_all(get_rgb_stats)  # Measure RGB statistics
+    annotations.measure_all(get_dev_rugosity, use_parallel=False)  # Measure rugosity
+    annotations.measure_all(get_vector_dispersion)
+    annotations.measure_all(get_plane_angles)
+
+    # Save habitat measurements
+    hab_measures_output_path = os.path.join(hab_measures_output_dir, f"{site_name}_measurements.csv")
+    annotations.save(hab_measures_output_path)
+    logger.info(f"Saved habitat measurements to {hab_measures_output_path}")
+
+    # Visualize elevation angles for a subset of annotations
+    logger.info(f"Running elevation visualizations for subset of annotations at {site_name}")
+
+    ann_subset = annotations.subset(5)  # You can change 5 to however many you want
+    ann_subset.get_point_cloud_by_radius(pcd, 0.2)
+
+    for ann in ann_subset:
+        print(ann.id, ann.label, ann.orig_coords)
+    
+        try:
+            ann.get_first_image_match(cams, pcd)
+            ann.image_match.show()
+
+            ann.measure(get_plane_angles)
+            output_filename = os.path.join(settings.OUTPUT_FOLDER, f"{ann.id}_elevation.png")
+
+            visualizations.visualize_elevation_angle(
+                ann.simple_pcd,
+                ann.measurements["plane_coeffs"],
+                ann.measurements["elevation"],
+                output_filename=output_filename
+            )
+            logger.info(f"Saved elevation visualization for {ann.id} to {output_filename}")
+
+        except Exception as e:
+            logger.warning(f"Failed visualization for {ann.id}: {e}")
+   

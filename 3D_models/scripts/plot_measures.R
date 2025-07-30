@@ -18,6 +18,7 @@ library(MASS)
 library(vegan)
 library(adegenet)
 library(factoextra)
+library(tidyverse)
 
 #### Functions ####
 add.alpha <- function(col, alpha=1){
@@ -107,7 +108,9 @@ dim(sna_40) #5x25
 #### Combine the separate objects into one, manipulate and filter ####
 # coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, hul_20, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40, wat_05) #422x24
 
-coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40) #399 x 26
+# coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40) #399 x 25
+
+coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25 # focus only on est, kal & sna for a simpler plot
 
 # Add labels from metadata
 # Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
@@ -117,15 +120,15 @@ coral_ann2 <- merge(coral_ann, metadata[, c("ID", "Species_mpha")],
 # Update the 'label' column with Species_mpha
 coral_ann2$label <- coral_ann2$Species_mpha
 
-# # Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180. No longer needed as of April 2025, since we now want to know if coral is angled up or angled down.
-# coral_ann3 <- coral_ann2 %>%
-#   mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
+# Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180. No longer needed as of April 2025, since we now want to know if coral is angled up or angled down. Decided that we again want to limit elevation to 0-90
+coral_ann3 <- coral_ann2 %>%
+mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
 
-mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, remove corals that aren't Madracis
+mad_ann <- coral_ann3[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, 363x26 remove corals that aren't Madracis
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 331x26
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 331x26, 308x26
 
-mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 324x26
+mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 324x26, 301x26
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -332,7 +335,7 @@ plot_boxplot_facet_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
 
-# Aggregate data across sites by depth, with an option for ANOVA
+#### Aggregate data across sites by depth, with an option for ANOVA ####
 # plot_boxplot_by_depth <- function(df, y_var) {
 #   ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
 #     geom_boxplot(alpha = 1, outlier.shape = NA) +
@@ -460,6 +463,7 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14 # point size, which is the font size
 )
+
 plot_boxplot_anova(mad_ann_seq_core, "gapF_raw")
 
 dev.off()
@@ -506,6 +510,214 @@ plot_boxplot_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
 
+#### Reduce to only MDEC, MPHA1, MPHA2 & MSEN ####
+mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN'),]
+
+plot_boxplot_anova <- function(df, y_var) {
+  tukey_results <- df %>%
+    group_by(depth) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      # Perform ANOVA only if there are at least 2 unique labels
+      if (length(unique(sub_df$label)) < 2) {
+        return(NULL)  # Skip ANOVA if only one group exists
+      }
+      
+      anova_model <- aov(sub_df[[y_var]] ~ sub_df$label)
+      
+      # Perform Tukey’s HSD test
+      tukey_test <- tryCatch(
+        TukeyHSD(anova_model),
+        error = function(e) NULL  # Handle error cases gracefully
+      )
+      
+      # Skip if Tukey test failed
+      if (is.null(tukey_test)) return(NULL)
+      
+      # Extract p-values safely
+      tukey_values <- tukey_test$`sub_df$label`[, "p adj"]
+      valid_names <- grep("-", names(tukey_values), value = TRUE)  # Ensure valid comparisons
+      tukey_values <- tukey_values[valid_names]
+      
+      # Skip if no valid comparisons
+      if (length(tukey_values) == 0) return(NULL)
+      
+      # Assign letters
+      tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
+      
+      # Return formatted dataframe
+      data.frame(label = names(tukey_letters), Letters = tukey_letters, depth = unique(sub_df$depth))
+    }) %>%
+    bind_rows()
+  
+  # Compute max y values per depth to position letters properly
+  y_max <- df %>%
+    group_by(depth, label) %>%
+    summarize(max_y = max(.data[[y_var]], na.rm = TRUE) * 1.05, .groups = "drop")
+  
+  # Merge Tukey results with max y values
+  tukey_results <- left_join(tukey_results, y_max, by = c("depth", "label"))
+  
+  # Plot boxplots with significance letters
+  ggplot(df, aes(x = label, y = .data[[y_var]], fill = label)) +
+    geom_boxplot(alpha = 1, outlier.shape = NA) +
+    geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+    facet_wrap(~depth, nrow = 1) +  # Facet by depth in a single row
+    geom_text(data = tukey_results, aes(x = label, y = max_y * 1.05, label = Letters),
+              color = "black", size = 4, fontface = "bold", na.rm = TRUE) +  # Tukey letters
+    theme_minimal() +
+    labs(y = y_var, x = "Genetic lineage") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid = element_blank(),  # Remove all grid lines
+      panel.background = element_blank(),  # Remove background color
+      strip.background = element_blank(),  # Remove facet background
+      strip.text = element_text(face = "bold"),  # Keep facet text bold
+      axis.line = element_line(color = "black"),  # Show x and y axes
+      axis.ticks = element_line(color = "black"), # Show axis ticks
+      panel.border = element_rect(color = "black", fill = NA)  # Add borders
+    ) +
+    scale_fill_manual(values = c("#ff9a81", "#b6c590", 
+                                 "#6b8e23", "#b0e0e6", "gray70"))
+}
+
+# Plot each of the measurements and save
+png(file=here("3D_models/figures/dev_rug_bydepth_anova_simple.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core_reduced, "dev_rug")
+
+dev.off()
+
+png(file=here("3D_models/figures/gapF_fill_bydepth_anova_simple.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core_reduced, "gapF_fill")
+
+dev.off()
+
+png(file=here("3D_models/figures/vector_disp_bydepth_anova_simple.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core_reduced, "vector_disp")
+
+dev.off()
+
+png(file=here("3D_models/figures/substrate_angle_bydepth_anova_simple.png"), width=16, height=4, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova(mad_ann_seq_core_reduced, "elevation")
+
+dev.off()
+
+#### Restructure function so that multiple y variables can be plotted ####
+plot_boxplot_anova_multi <- function(df, y_vars) {
+  
+  # Reshape to long format
+  df_long <- df %>%
+    pivot_longer(cols = all_of(y_vars), names_to = "variable", values_to = "y_value")
+  
+  # Perform ANOVA + Tukey for each variable and depth
+  tukey_results <- df_long %>%
+    group_by(variable, depth) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      if (length(unique(sub_df$label)) < 2) return(NULL)
+      
+      anova_model <- aov(y_value ~ label, data = sub_df)
+      
+      tukey_test <- tryCatch(
+        TukeyHSD(anova_model),
+        error = function(e) NULL
+      )
+      if (is.null(tukey_test)) return(NULL)
+      
+      tukey_values <- tukey_test$label[, "p adj"]
+      valid_names <- grep("-", names(tukey_values), value = TRUE)
+      tukey_values <- tukey_values[valid_names]
+      if (length(tukey_values) == 0) return(NULL)
+      
+      tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
+      
+      data.frame(label = names(tukey_letters),
+                 Letters = tukey_letters,
+                 depth = unique(sub_df$depth),
+                 variable = unique(sub_df$variable))
+    }) %>%
+    bind_rows()
+  
+  # Compute max y values for letter positioning
+  y_max <- df_long %>%
+    group_by(variable, depth, label) %>%
+    summarize(max_y = max(y_value, na.rm = TRUE) * 1.05, .groups = "drop")
+  
+  tukey_results <- left_join(tukey_results, y_max,
+                             by = c("variable", "depth", "label"))
+  
+  # Plot
+  ggplot(df_long, aes(x = label, y = y_value, fill = label)) +
+    geom_boxplot(alpha = 1, outlier.shape = NA) +
+    geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+    facet_grid(variable ~ depth, scales = "free_y", switch = "y") +  # variable labels on left
+    geom_text(data = tukey_results, 
+              aes(x = label, y = max_y * 1.05, label = Letters),
+              color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
+    theme_minimal() +
+    labs(y = NULL, x = "Genetic lineage") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid = element_blank(),
+      strip.text.y.left = element_text(angle = 90, face = "bold"),  # variable names readable
+      strip.placement = "outside",  # put variable labels outside the plot
+      axis.line = element_line(color = "black"),
+      panel.border = element_rect(color = "black", fill = NA)
+    ) +
+    scale_fill_manual(values = c("#ff9a81", "#b6c590", 
+                                 "#6b8e23", "#b0e0e6", "gray70"))
+}
+
+png(file=here("3D_models/figures/DR_VD_GF_SA_bydepth_anova_simple.png"), width=10, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova_multi(mad_ann_seq_core_reduced, c("dev_rug", "vector_disp", "gapF_fill", "elevation"))
+
+dev.off()
+
 #####################################
 #### ANOVA, look at main effects ####
 #####################################
@@ -527,7 +739,7 @@ dotplot(gapF_fill ~ site, data = mad_ann_seq_core)
 
 leveneTest(gapF_fill ~ label, data = mad_ann_seq_core) # formal Levene's test for equality of variances
 
-Anova(gapF_fill_lm) # only species & depth, okay to merge sites
+Anova(gapF_fill_lm) # only species, depth & site are significant
 
 # Dev rug
 dev_rug_lm <- lm(dev_rug ~ label + site + depth, data = mad_ann_seq_core)
@@ -547,7 +759,7 @@ Anova(luminance_lm) # everything has a main effect
 # Elevation/substrate angle
 elevation_lm <- lm(elevation ~ label + site + depth, data = mad_ann_seq_core)
 summary(elevation_lm)
-Anova(elevation_lm) # everything has a main effect
+Anova(elevation_lm) # only species has a main effect
 
 #################################
 #### Multivariate approaches ####
@@ -586,14 +798,14 @@ depth_lda_df <- data.frame(depth = mad_ann_seq_core[, "depth"],
                      lda = predict(depth_lda)$x)
 
 plot(depth_lda_df$lda.LD1, depth_lda_df$lda.LD2, col = add.alpha(colors_depth[factor(depth_lda_df$depth)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Depth')
-legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19)
+legend('bottomleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19)
 
 # Species
 species_lda <- lda(mad_ann_seq_core$label ~ dependent_vars, CV = F)
 species_lda_df <- data.frame(label = mad_ann_seq_core[, "label"],
                            lda = predict(species_lda)$x)
 
-plot(species_lda_df$lda.LD1, species_lda_df$lda.LD2, col = add.alpha(colors_mpha[factor(species_lda_df$label)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Species', xlim = c(-5,4))
+plot(species_lda_df$lda.LD1, species_lda_df$lda.LD2, col = add.alpha(colors_mpha[factor(species_lda_df$label)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Species', xlim = c(-5,3))
 legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.8)
 
 # Site
@@ -601,7 +813,7 @@ site_lda <- lda(mad_ann_seq_core$site ~ dependent_vars, CV = F)
 site_lda_df <- data.frame(site = mad_ann_seq_core[, "site"],
                              lda = predict(site_lda)$x)
 
-plot(site_lda_df$lda.LD1, site_lda_df$lda.LD2, col = add.alpha(colors_site[factor(site_lda_df$site)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Site')
+plot(site_lda_df$lda.LD1, site_lda_df$lda.LD2, col = add.alpha(colors_site[factor(site_lda_df$site)], 0.7), pch = 19, xlab = 'LD1', ylab = 'LD2', main = 'Site', xlim = c(-3.2, 5.5))
 legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19)
 
 dev.off()
@@ -733,13 +945,13 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Depth')
+plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core$depth)], 0.7), pch = 19, xlab = 'PC 1 (40.9%)', ylab = 'PC 2 (29.4%)', main = 'Depth', xlim = c(-4.5, 4.2))
 legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.9)
 
-plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Species')
+plot(pca_mad$x, col = add.alpha(colors_mpha[factor(mad_ann_seq_core$label)], 0.7), pch = 19, xlab = 'PC 1 (40.9%)', ylab = 'PC 2 (29.4%)', main = 'Species', xlim = c(-4.5, 4.2))
 legend('topleft', legend = c("MCAR", "MDEC", "MFOR", "MMIR", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"), col = add.alpha(colors_mpha, 0.7), pch = 19, cex = 0.6)
 
-plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (41.4%)', ylab = 'PC 2 (29.0%)', main = 'Sites')
+plot(pca_mad$x, col = add.alpha(colors_site[factor(mad_ann_seq_core$site)], 0.7), pch = 19, xlab = 'PC 1 (40.9%)', ylab = 'PC 2 (29.4%)', main = 'Sites', xlim = c(-4.5, 4.2))
 legend('topleft', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.7)
 
 dev.off()
@@ -876,14 +1088,14 @@ par(
   mfrow = c(2,2)
 )
 
-plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Depth')
-legend('bottomright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
+plot(pca_mpha$x, col = add.alpha(colors_depth[factor(mpha_data$depth)], 0.7), pch = 19, xlab = 'PC 1 (46.0%)', ylab = 'PC 2 (26.9%)', main = 'Depth', xlim = c(-4,5))
+legend('topright', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
 
-plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Species')
-legend('bottomright', legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.9)
+plot(pca_mpha$x, col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6")[factor(mpha_data$label)], 0.7), pch = 19, xlab = 'PC 1 (46.0%)', ylab = 'PC 2 (26.9%)', main = 'Species', xlim = c(-4,5))
+legend('topright', legend = c("MPHA.ln1", "MPHA.ln2", "MPHA.ln4"), col = add.alpha(c("#b6c590", "#6b8e23", "#79d2a6"), 0.7), pch = 19, cex = 0.8)
 
-plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (48.1%)', ylab = 'PC 2 (25.6%)', main = 'Sites')
-legend('bottomright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.65)
+plot(pca_mpha$x, col = add.alpha(colors_site[factor(mpha_data$site)], 0.7), pch = 19, xlab = 'PC 1 (46.0%)', ylab = 'PC 2 (26.9%)', main = 'Sites', xlim = c(-4,5))
+legend('topright', legend = c("dir", "est", "hul", "kal", "sea", "sna", "wat"), col = add.alpha(colors_site, 0.7), pch = 19, cex = 0.8)
 
 dev.off()
 
@@ -896,7 +1108,7 @@ model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label)# by
 a_score <- optim.a.score(model3d.dapc.mpha.species) 
 
 # Step 2: perform DAPC
-model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label, n.pca = 2, n.da = 2)
+model3d.dapc.mpha.species <- dapc(model3d.data.mpha.scaled, mpha_data$label, n.pca = 3, n.da = 2)
 
 # Step 3: plot
 scatter(model3d.dapc.mpha.species)        # Visualizes the DAPC space
@@ -911,7 +1123,7 @@ model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth)# by d
 a_score <- optim.a.score(model3d.dapc.mpha.depth) 
 
 # Step 2: perform DAPC
-model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth, n.pca = 2, n.da = 2)
+model3d.dapc.mpha.depth <- dapc(model3d.data.mpha.scaled, mpha_data$depth, n.pca = 3, n.da = 2)
 
 # Step 3: plot
 scatter(model3d.dapc.mpha.depth)        # Visualizes the DAPC space
@@ -982,7 +1194,7 @@ par(
   xpd = TRUE
 )
 
-plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 76.9%', ylab = 'LD2, variance explained 15.2%')
+plot(model3d.dapc.mpha.speciesdepth$ind.coord[,1], model3d.dapc.mpha.speciesdepth$ind.coord[,2], col = add.alpha(colors_mpha_depth[factor(mpha_data$label_depth)], 0.7), pch = 19, las = 1, xlab = 'LD1, variance explained 63.1%', ylab = 'LD2, variance explained 19.0%')
 
 legend('topright', inset = c(-0.35,0), legend = c("MPHA.ln1_5", "MPHA.ln1_10", "MPHA.ln1_20",  "MPHA.ln2_10", "MPHA.ln2_20", "MPHA.ln2_40", "MPHA.ln2_60", "MPHA.ln4_40", "MPHA.ln4_60"), col = add.alpha(colors_mpha_depth, 0.7), pch = 19, title = 'Species by Depth')
 

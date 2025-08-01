@@ -19,6 +19,7 @@ library(vegan)
 library(adegenet)
 library(factoextra)
 library(tidyverse)
+library(ggridges)
 
 #### Functions ####
 add.alpha <- function(col, alpha=1){
@@ -121,10 +122,10 @@ coral_ann2 <- merge(coral_ann, metadata[, c("ID", "Species_mpha")],
 coral_ann2$label <- coral_ann2$Species_mpha
 
 # Manipulate elevation/slope angle by subtracting any angles greater than 90 degrees by 180. No longer needed as of April 2025, since we now want to know if coral is angled up or angled down. Decided that we again want to limit elevation to 0-90
-coral_ann3 <- coral_ann2 %>%
-mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
+# coral_ann3 <- coral_ann2 %>%
+# mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
 
-mad_ann <- coral_ann3[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, 363x26 remove corals that aren't Madracis
+mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, 363x26 remove corals that aren't Madracis, change input data set depending on elevation range
 
 mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 331x26, 308x26
 
@@ -691,7 +692,7 @@ plot_boxplot_anova_multi <- function(df, y_vars) {
               aes(x = label, y = max_y * 1.05, label = Letters),
               color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
     theme_minimal() +
-    labs(y = NULL, x = "Genetic lineage") +
+     
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       panel.grid = element_blank(),
@@ -704,7 +705,7 @@ plot_boxplot_anova_multi <- function(df, y_vars) {
                                  "#6b8e23", "#b0e0e6", "gray70"))
 }
 
-png(file=here("3D_models/figures/DR_VD_GF_SA_bydepth_anova_simple.png"), width=10, height=8, res=300, units="in")
+png(file=here("3D_models/figures/DR_VD_GF_SA180_bydepth_anova_simple.png"), width=10, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -766,11 +767,16 @@ Anova(elevation_lm) # only species has a main effect
 #################################
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6")
 show_col(colors_mpha)
+colors_mpha_reduced <- c("#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6")
+show_col(colors_mpha_reduced)
 colors_depth <- c("#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#2171B5")
 show_col(colors_depth)
 colors_site <- c("#B8DE29FF", "#74D055FF", "#20A386FF", "#238A8DFF", "#2D718EFF", "#453781FF", "#481568FF")
 show_col(colors_site)
+colors_site_reduced <- c("#74D055FF", "#238A8DFF", "#453781FF")
+show_col(colors_site_reduced)
 
+#### For when elevation ranges from 0-90 ####
 # MANOVA
 dependent_vars <- cbind(mad_ann_seq_core$dev_rug, mad_ann_seq_core$elevation, mad_ann_seq_core$gapF_fill, mad_ann_seq_core$luminance, mad_ann_seq_core$vector_disp)
 independent_vars <- cbind.data.frame(mad_ann_seq_core$label, mad_ann_seq_core$site, mad_ann_seq_core$depth)
@@ -1002,6 +1008,70 @@ scatter(model3d.dapc.species)
 scatter(model3d.dapc.depth)  
 
 dev.off()
+
+#### For when elevation ranges from 0-180 ####
+# PCA analysis: correlation matrix
+pca_mad <- prcomp(mad_ann_seq_core_reduced[, c("elevation", "gapF_fill", "vector_disp")], center = TRUE, scale. = TRUE) # correlation matrix pca
+
+summ <- summary(pca_mad) # calculates variance
+summ$importance
+
+png(file=here("3D_models/figures/DR_VD_GF_SA90_pca.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  mfrow = c(2,2)
+)
+
+plot(pca_mad$x, col = add.alpha(colors_depth[factor(mad_ann_seq_core_reduced$depth)], 0.7), pch = 19, xlab = 'PC 1 (44.9%)', ylab = 'PC 2 (33.2%)', main = 'Depth', xlim = c(-4, 2.8))
+legend('topleft', legend = c('5', '10', '20', '40', '60'), col = add.alpha(colors_depth, 0.7), pch = 19, cex = 0.8)
+
+plot(pca_mad$x, col = add.alpha(colors_mpha_reduced[factor(mad_ann_seq_core_reduced$label)], 0.7), pch = 19, xlab = 'PC 1 (44.9%)', ylab = 'PC 2 (33.2%)', main = 'Species', xlim = c(-4, 2.8))
+legend('topleft', legend = c("MDEC", "MPHA.ln1", "MPHA.ln2", "MSEN"), col = add.alpha(colors_mpha_reduced, 0.7), pch = 19, cex = 0.6)
+
+plot(pca_mad$x, col = add.alpha(colors_site_reduced[factor(mad_ann_seq_core_reduced$site)], 0.7), pch = 19, xlab = 'PC 1 (44.9%)', ylab = 'PC 2 (33.2%)', main = 'Sites', xlim = c(-4, 2.8))
+legend('topleft', legend = c("est", "kal", "sna"), col = add.alpha(colors_site_reduced, 0.7), pch = 19, cex = 0.8)
+
+dev.off()
+
+# Playing with a summary figure
+plot(pca_mad$x[,1], mad_ann_seq_core_reduced$depth, ylim = rev(range(mad_ann_seq_core_reduced$depth)), col = add.alpha(colors_mpha_reduced[factor(mad_ann_seq_core_reduced$label)], 0.7), pch = 19, xlab = "PC1", ylab = "Depth")
+
+pca_data <- cbind(mad_ann_seq_core_reduced, pca_mad$x)
+
+png(file=here("3D_models/figures/VD_GF_SA90_pc1_density.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+ggplot(pca_data, aes(x = PC1, y = factor(depth), fill = label)) +
+  geom_density_ridges(alpha = 0.6, scale = 1.3) +
+  scale_y_discrete(limits = rev, expand = expansion(mult = c(0.11, 0.25))) +
+  scale_fill_manual(values = colors_mpha_reduced, name = "Genetic lineage") +
+  theme_ridges() +
+  labs(x = "PC1", y = "Depth") +
+  theme(
+    legend.position = "right", 
+    legend.title = element_text(face = "bold"),
+    legend.background = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    # Move x-axis values closer to plot
+    axis.text.x = element_text(margin = margin(t = -25)),   # smaller top margin for axis text
+  )
+
+dev.off()
+
 
 #######################################################
 #### Multivariate for MPHA1 vs MPHA2 vs MPHA4 only ####

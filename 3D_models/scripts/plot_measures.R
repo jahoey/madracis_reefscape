@@ -778,7 +778,7 @@ show_col(colors_site)
 colors_site_reduced <- c("#74D055FF", "#238A8DFF", "#453781FF")
 show_col(colors_site_reduced)
 
-#### For when elevation ranges from 0-90 ####
+#### Full multivariate assessment ####
 # MANOVA
 dependent_vars <- cbind(mad_ann_seq_core$dev_rug, mad_ann_seq_core$elevation, mad_ann_seq_core$gapF_fill, mad_ann_seq_core$luminance, mad_ann_seq_core$vector_disp)
 independent_vars <- cbind.data.frame(mad_ann_seq_core$label, mad_ann_seq_core$site, mad_ann_seq_core$depth)
@@ -1011,7 +1011,7 @@ scatter(model3d.dapc.depth)
 
 dev.off()
 
-#### For when elevation ranges from 0-180 ####
+#### Pick and choose for a potential multivariate summary figure ####
 # PCA analysis: correlation matrix
 pca_mad <- prcomp(mad_ann_seq_core_reduced[, c("elevation", "gapF_fill", "vector_disp")], center = TRUE, scale. = TRUE) # correlation matrix pca
 

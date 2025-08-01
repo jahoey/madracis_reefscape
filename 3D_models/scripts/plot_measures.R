@@ -111,7 +111,9 @@ dim(sna_40) #5x25
 
 # coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_10, sna_20, sna_40) #399 x 25
 
-coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25 # focus only on est, kal & sna for a simpler plot
+# coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25; focus only on est, kal & sna for a simpler plot
+
+coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40) # 310 x 25; focus on est and kal for even simpler plot
 
 # Add labels from metadata
 # Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
@@ -692,7 +694,7 @@ plot_boxplot_anova_multi <- function(df, y_vars) {
               aes(x = label, y = max_y * 1.05, label = Letters),
               color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
     theme_minimal() +
-     
+    labs(x = "Genetic lineage") + 
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       panel.grid = element_blank(),
@@ -705,7 +707,7 @@ plot_boxplot_anova_multi <- function(df, y_vars) {
                                  "#6b8e23", "#b0e0e6", "gray70"))
 }
 
-png(file=here("3D_models/figures/DR_VD_GF_SA180_bydepth_anova_simple.png"), width=10, height=8, res=300, units="in")
+png(file=here("3D_models/figures/DR_VD_GF_SA180_bydepth_ek_anova_simple.png"), width=10, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -1016,7 +1018,7 @@ pca_mad <- prcomp(mad_ann_seq_core_reduced[, c("elevation", "gapF_fill", "vector
 summ <- summary(pca_mad) # calculates variance
 summ$importance
 
-png(file=here("3D_models/figures/DR_VD_GF_SA90_pca.png"), width=8, height=8, res=300, units="in")
+png(file=here("3D_models/figures/DR_VD_GF_SA180_pca_ek.png"), width=8, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -1043,7 +1045,7 @@ plot(pca_mad$x[,1], mad_ann_seq_core_reduced$depth, ylim = rev(range(mad_ann_seq
 
 pca_data <- cbind(mad_ann_seq_core_reduced, pca_mad$x)
 
-png(file=here("3D_models/figures/VD_GF_SA90_pc1_density.png"), width=8, height=8, res=300, units="in")
+png(file=here("3D_models/figures/VD_GF_SA180_pc1_density_ek.png"), width=8, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units
@@ -1072,6 +1074,9 @@ ggplot(pca_data, aes(x = PC1, y = factor(depth), fill = label)) +
 
 dev.off()
 
+aggregate(x=pca_data$PC1,
+          by=list(mad_ann_seq_core_reduced$label,mad_ann_seq_core_reduced$depth),
+          FUN=mean)
 
 #######################################################
 #### Multivariate for MPHA1 vs MPHA2 vs MPHA4 only ####

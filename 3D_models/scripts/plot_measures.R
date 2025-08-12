@@ -113,7 +113,9 @@ dim(sna_40) #5x25
 
 # coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25; focus only on est, kal & sna for a simpler plot
 
-coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40) # 310 x 25; focus on est and kal for even simpler plot
+# coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40) # 310 x 25; focus on est and kal for even simpler plot
+
+coral_ann <- rbind(est_20, kal_20, sna_20) #148 x 25; only for est, kal & sna 20m supplement figure
 
 # Add labels from metadata
 # Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
@@ -264,7 +266,7 @@ plot_boxplot_facet_anova <- function(df, y_var) {
       panel.border = element_rect(color = "black", fill = NA)  # Add borders
     ) +
     scale_fill_manual(values = c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", 
-                                 "#6b8e23", "#79d2a6", "#b0e0e6", "gray70"))
+                                 "#6b8e23", "#79d2a6", "#b0e0e6", "gray70")) # all species
 }
 
 # Plot each of the measurements and save
@@ -351,6 +353,77 @@ par(
 plot_boxplot_facet_anova(mad_ann_seq_core, "elevation")
 
 dev.off()
+
+# For est, kal and sna 20m only #
+plot_boxplot_facet_anova <- function(df, y_vars) {
+  # Reshape data to long format
+  df_long <- df %>%
+    pivot_longer(cols = all_of(y_vars), names_to = "measure", values_to = "value")
+  
+  # Tukey test results
+  tukey_results <- df_long %>%
+    group_by(site, depth, measure) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      if (length(unique(sub_df$label)) < 2) return(NULL)
+      anova_model <- aov(value ~ label, data = sub_df)
+      if (length(coef(anova_model)) < 2) return(NULL)
+      
+      num_groups <- length(unique(sub_df$label))
+      if (num_groups < 2) return(NULL)
+      
+      tukey_test <- tryCatch(TukeyHSD(anova_model), error = function(e) NULL)
+      if (is.null(tukey_test) || is.null(tukey_test$label)) return(NULL)
+      
+      tukey_values <- tukey_test$label[, "p adj"]
+      valid_names <- grep("-", names(tukey_values), value = TRUE)
+      tukey_values <- tukey_values[valid_names]
+      if (length(tukey_values) == 0) return(NULL)
+      
+      tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
+      data.frame(label = names(tukey_letters),
+                 Letters = tukey_letters,
+                 site = unique(sub_df$site),
+                 depth = unique(sub_df$depth),
+                 measure = unique(sub_df$measure))
+    }) %>%
+    bind_rows()
+  
+  # Max y for letters
+  y_max <- df_long %>%
+    group_by(site, depth, label, measure) %>%
+    summarize(max_y = max(value, na.rm = TRUE), .groups = "drop")
+  
+  tukey_results <- left_join(tukey_results, y_max, 
+                             by = c("site", "depth", "label", "measure"))
+  
+  # Plot
+  ggplot(df_long, aes(x = label, y = value, fill = label)) +
+    geom_boxplot(alpha = 1, outlier.shape = NA) +
+    geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
+    facet_grid(measure ~ site, scales = "free_y", switch = "y") +  # Removed depth facetting
+    geom_text(data = tukey_results, 
+              aes(x = label, y = max_y * 1.15, label = Letters),  # Lowered letters
+              inherit.aes = FALSE, color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
+    theme_minimal() +
+    labs(y = NULL, x = "Genetic lineage", fill = 'lineage') +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.title.y = element_text(margin = margin(r = 10)), # space for y-axis title
+      panel.grid = element_blank(),
+      panel.background = element_blank(),
+      strip.background = element_blank(),
+      strip.text.y = element_text(face = "bold"), # y-axis facet labels (measure)
+      strip.placement = "outside", # moves measure labels to outside left
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black"),
+      panel.border = element_rect(color = "black", fill = NA)
+    ) +
+    scale_fill_manual(values = c("#ff9a81", "#E6AB02", 
+                                 "#b6c590", "#6b8e23", "#b0e0e6", "gray70"))
+}
+
+plot_boxplot_facet_anova(mad_ann_seq_core, y_vars = c("gapF_fill", "elevation", "vector_disp"))
 
 #### Aggregate data across sites by depth, with an option for ANOVA ####
 # plot_boxplot_by_depth <- function(df, y_var) {

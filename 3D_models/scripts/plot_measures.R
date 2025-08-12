@@ -131,7 +131,21 @@ mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #386x26, 363x26
 
 mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 331x26, 308x26
 
-mad_ann_seq_core <- mad_ann_seq[!mad_ann_seq$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration, 324x26, 301x26
+# Make sure any clones are removed
+Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
+Madracis606_split <- as.data.frame(str_split_fixed(Madracis606$V1, '_', 6))
+Madracis606_names <- paste(Madracis606_split$V4, Madracis606_split$V5, sep = "_")
+
+mad_ann_seq$id %in% Madracis606_names # identify potential clones and carefully check 06a_merge_sample_bams.sh to see if one or both are in annotation dataset. If 2, remove 1.
+
+mad_ann_seq[!mad_ann_seq$id %in% Madracis606_names,]$id # potential clones. Clone pair can be seen in 06a_merge_sample_bams.sh
+mad_ann_seq[mad_ann_seq$id %in% Madracis606_names,]$id
+
+clones <- c('JH_0089', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0381', 'JH_0387', 'JH_0475', 'JH_0483') # clones
+
+mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones
+
+mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 324x26, 301x26
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]

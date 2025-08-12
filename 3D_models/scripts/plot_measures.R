@@ -423,7 +423,19 @@ plot_boxplot_facet_anova <- function(df, y_vars) {
                                  "#b6c590", "#6b8e23", "#b0e0e6", "gray70"))
 }
 
+png(file=here("3D_models/figures/VD_GF_SA180_rad0.2_facet_anova_20m.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
 plot_boxplot_facet_anova(mad_ann_seq_core, y_vars = c("gapF_fill", "elevation", "vector_disp"))
+
+dev.off()
 
 #### Aggregate data across sites by depth, with an option for ANOVA ####
 # plot_boxplot_by_depth <- function(df, y_var) {

@@ -107,11 +107,9 @@ dim(sna_40) #5x25
 #dim(wat_20)
 
 #### Combine the separate objects into one, manipulate and filter ####
-coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_05,sna_10, sna_20, sna_40) #409 x 25; all with scaled & oriented plots
+# coral_ann <- rbind(dir_05, est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sea_10, sea_20, sna_05,sna_10, sna_20, sna_40) #409 x 25; all with scaled & oriented plots
 
-# coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25; focus only on est, kal & sna for a simpler plot
-
-# coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40) # 310 x 25; focus on est and kal for even simpler plot
+coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25; focus only on est, kal & sna for a simpler plot
 
 # coral_ann <- rbind(est_20, kal_20, sna_20) #148 x 25; only for est, kal & sna 20m supplement figure
 
@@ -127,9 +125,9 @@ coral_ann2$label <- coral_ann2$Species_mpha
 # coral_ann3 <- coral_ann2 %>%
 # mutate(elevation = if_else(elevation > 90, 180 - elevation, elevation))
 
-mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #396x26, 363x26 remove corals that aren't Madracis, change input data set depending on elevation range
+mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #396x26, 363x26, 138x26 remove corals that aren't Madracis, change input data set depending on elevation range
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 341x26, 308x26
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 341x26, 308x26, 123x26
 
 # Make sure any clones are removed
 Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
@@ -145,7 +143,7 @@ clones <- c('JH_0089', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0381', 'JH_0387', 'J
 
 mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones
 
-mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 325x26, 301x26, 110 x 26 for est, kal & sna 20m only
+mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 325x26, 292x26, 110 x 26 for est, kal & sna 20m only
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -868,7 +866,7 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
                                  "#6b8e23", "#b0e0e6", "gray70"))
 }
 
-png(file=here("3D_models/figures/DR_VD_GF_SA180_bydepth_ek_anova_simple.png"), width=10, height=8, res=300, units="in")
+png(file=here("3D_models/figures/DR_VD_GF_SA180_bydepth_eks_anova_simple.png"), width=10, height=8, res=300, units="in")
 
 par(
   mar=c(4, 5, 3, 1), # panel margin size in "line number" units

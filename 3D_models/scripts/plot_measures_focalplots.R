@@ -106,10 +106,7 @@ dim(sna_40) #5x25
 ################
 
 #### Combine the separate objects into one, manipulate and filter ####
-# Data set 1 for est, kal & sna all depths
-# coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25; focus only on est, kal & sna for a simpler plot
-
-# Data set 2 for est, kal & sna 20m only
+# Data set 1 for est, kal & sna 20m only
 coral_ann_eks20 <- rbind(est_20, kal_20, sna_20) #148 x 25; only for est, kal & sna 20m supplement figure
 
 # Add labels from metadata
@@ -288,15 +285,32 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
   df_long <- df %>%
     pivot_longer(cols = all_of(y_vars), names_to = "variable", values_to = "y_value")
   
-  # Perform ANOVA + Tukey for each variable and depth
+  # Perform t-test or ANOVA + Tukey for each variable and depth, as appropriate
   tukey_results <- df_long %>%
     group_by(variable, depth) %>%
     group_split() %>%
     lapply(function(sub_df) {
-      if (length(unique(sub_df$label)) < 2) return(NULL)
+      n_groups <- length(unique(sub_df$label))
       
+      # Case 1: fewer than 2 groups → skip
+      if (n_groups < 2) return(NULL)
+      
+      # Case 2: exactly 2 groups → run t-test
+      if (n_groups == 2) {
+        ttest <- t.test(y_value ~ label, data = sub_df)
+        sig <- ttest$p.value < 0.05
+        labs <- if (sig) c("a", "b") else c("a", "a")
+        names(labs) <- unique(sub_df$label)
+        return(data.frame(
+          label = names(labs),
+          Letters = labs,
+          depth = unique(sub_df$depth),
+          variable = unique(sub_df$variable)
+        ))
+      }
+      
+      # Case 3: 3+ groups → ANOVA + Tukey
       anova_model <- aov(y_value ~ label, data = sub_df)
-      
       tukey_test <- tryCatch(
         TukeyHSD(anova_model),
         error = function(e) NULL
@@ -310,10 +324,12 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
       
       tukey_letters <- multcompLetters(tukey_values < 0.05)$Letters
       
-      data.frame(label = names(tukey_letters),
-                 Letters = tukey_letters,
-                 depth = unique(sub_df$depth),
-                 variable = unique(sub_df$variable))
+      data.frame(
+        label = names(tukey_letters),
+        Letters = tukey_letters,
+        depth = unique(sub_df$depth),
+        variable = unique(sub_df$variable)
+      )
     }) %>%
     bind_rows()
   
@@ -334,12 +350,19 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
     theme_minimal() +
     labs(y = NULL, x = "Genetic lineage", fill = 'lineage') + 
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 12), # tick labels
+      axis.text.y = element_text(size = 12),
       panel.grid = element_blank(),
       strip.text.y.left = element_text(angle = 90, face = "bold"),
       strip.placement = "outside",
       axis.line = element_line(color = "black"),
-      panel.border = element_rect(color = "black", fill = NA)
+      panel.border = element_rect(color = "black", fill = NA),
+      axis.ticks = element_line(color = "black", linewidth = 0.5),
+      axis.ticks.length = unit(0.15, "cm"),
+      axis.title.x = element_text(size = 14, face = "bold"),          # axis titles
+      axis.title.y = element_text(size = 14, face = "bold"),
+      strip.text.x = element_text(size = 14, face = "bold"),  # facet labels along x
+      strip.text.y = element_text(size = 14, face = "bold")   # facet labels along y
     ) +
     scale_fill_manual(values = c("#ff9a81", "#b6c590", 
                                  "#6b8e23", "#b0e0e6", "gray70"))

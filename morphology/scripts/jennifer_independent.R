@@ -598,6 +598,99 @@ septa.kw
 
 dunnTest(Mean_Septa ~ Species_mpha, data = septa.trimmed, method = 'holm')
 
+# Plot combination plot of IC distance for quality white squares and septa count
+png(file=here("morphology/figures/septa_and_ic_dist_quality_white_geno.png"), width=9, height=5, res=300, units="in")
+
+par(
+  mar=c(5, 4, 2, 0.5), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(1,2)
+)
+
+# Basic boxplot for septa count
+d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 491)', xaxt = 'n', yaxt = 'n')
+axis(1, labels = FALSE)
+mtext("Genetic lineage", side = 1, line = 4)
+axis(2, las = 2)
+mtext("Average Septa Count", side = 2, line = 3)
+
+text(x = 1:7,
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.4,
+     ## Use names from the data list.
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN","UNKN"), #"MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+# Add data points
+# Points
+stripchart(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS4 <- generate_label_df(TUKEY4 , "septa.trimmed$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.11*max( d$stats[nrow(d$stats),] )
+
+#Add the labels
+text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
+
+# Basic boxplot for quailty white squares
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(1, 3), outline = FALSE, main = 'Intercorallite Distance (n = 252)', xaxt = 'n', yaxt = 'n')
+axis(1, labels = FALSE)
+mtext("Genetic lineage", side = 1, line = 4)
+axis(2, las = 2)
+mtext("Average Intercorallite Distance (mm)", side = 2, line = 3)
+
+text(x = 1:6,
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - 0.1,
+     ## Use names from the data list.
+     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to almost 100% right-justified.
+     adj = 0.965)
+
+# Add data points
+# Points
+stripchart(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, # Data
+           method = "jitter", # Random noise
+           pch = 1,          # Pch symbols
+           col = 'black',           # Color of the symbol
+           vertical = TRUE,   # Vertical mode
+           add = TRUE)        # Add it over
+
+# Generate Tukey groups
+# Apply the function on my dataset
+LABELS3 <- generate_label_df(TUKEY3 , "ic.dist.trimmed.white.quality$Species_mpha")
+
+# I want to write the letter over each box. Over is how high I want to write it.
+over <- 0.25*max(c$stats[nrow(c$stats),] )
+
+#Add the labels
+text( c(1:6) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
+
+dev.off()
+
+
+
 #### Measurements broken out by depth, regardless of scale used (both yellow & white) ####
 septa.and.icdist.trimmed # colonies with both data for septa & IC dist
 ic.dist.trimmed # colonies with data for IC dist

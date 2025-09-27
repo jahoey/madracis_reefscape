@@ -52,7 +52,6 @@ names_split <- str_split_fixed(names, '_', 6)
 
 id_original <- paste(names_split[,4], names_split[,5], sep = "_")
 
-
 #### Subset the data ####
 nelly_geno <- data[data$ID %in% id_original,]
 
@@ -63,24 +62,38 @@ madracis_data <- nelly_geno[!nelly_geno$Species_mpha %in% c('ORB', 'PPOR', 'SINT
 
 madracis_data$Yellow.Ruler[which(madracis_data$Yellow.Ruler == "")] <- 'no'
 
+# Make sure any clones are removed
+Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
+Madracis606_split <- as.data.frame(str_split_fixed(Madracis606$V1, '_', 6))
+Madracis606_names <- paste(Madracis606_split$V4, Madracis606_split$V5, sep = "_")
+
+madracis_data$ID %in% Madracis606_names # identify potential clones and carefully check 06a_merge_sample_bams.sh to see if one or both are in morphology dataset. If 2, remove 1.
+
+madracis_data[!madracis_data$ID %in% Madracis606_names,]$ID # potential clones. Clone pair can be seen in 06a_merge_sample_bams.sh. Check to see if pair is on the list below. If yes, remove one
+madracis_data[madracis_data$ID %in% Madracis606_names,]$ID # were genotyped, but could have a clone
+
+clones <- c('JH_0033', 'JH_0062', 'JH_0071', 'JH_0079', 'JH_0089', 'JH_0122', 'JH_0143', 'JH_0192', 'JH_0212', 'JH_0221', 'JH_0287','JH_0306','JH_0381','JH_0387','JH_0404','JH_0405','JH_0409','JH_0420', 'JH_0463','JH_0464','JH_0466', 'JH_0475', 'JH_0476','JH_0483','JH_0517','JH_0539','JH_0540','JH_0544','JH_0545','JH_0547','JH_0555','JH_0593','JH_0617','JH_0618','JH_0651','JH_0657', 'JH_0661','JH_0663','JH_0677', 'JH_0694','JH_0696','JH_0707') # clones; MCAR clones are JH_0136 and JH_0143 - keep JH_0136 b/c measured using white square
+
+madracis_data2 <- madracis_data[!madracis_data$ID %in% clones, ] # remove the clones; 550 x 44
+
 #### Divide the dataframe into 2 separate dataframes: one for septa and one for IC distance ####
 # Intercorallite distance
-ic.dist <- madracis_data[,-c(10:24)]
+ic.dist <- madracis_data2[,-c(10:24)]
 
 # Let's figure out how much missing data there are in the data columns. 
 which(rowSums(is.na(ic.dist[10:24])) > 0) # this returns the rows of IC distance containing NAs
 
 # Remove the rows containing any NAs for IC distance
-ic.dist.trimmed <- ic.dist[-which(rowSums(is.na(ic.dist[10:24])) > 0),] #560 x 30
+ic.dist.trimmed <- ic.dist[-which(rowSums(is.na(ic.dist[10:24])) > 0),] #555 x 29
 
 # Septa
-septa <- madracis_data[,-c(25:39)]
+septa <- madracis_data2[,-c(25:39)]
 
 # Let's figure out how much missing data there are in the data columns. 
 which(rowSums(is.na(septa[10:24])) > 5) # this returns the rows of septa containing more than 5 NAs
 
 # Remove the rows containing more than 5 NAs for septa 
-septa.trimmed <- septa[-which(rowSums(is.na(septa[10:24])) > 5),] #529 x 30
+septa.trimmed <- septa[-which(rowSums(is.na(septa[10:24])) > 5),] #525 x 30
 
 #### Calculate the mean of columns 9 through 23 and store it in a new column ####
 septa.trimmed$Mean_Septa <- rowMeans(septa.trimmed[, 10:24], na.rm = TRUE)
@@ -89,7 +102,7 @@ ic.dist.trimmed$Mean_IC <- rowMeans(ic.dist.trimmed[, 10:24], na.rm = TRUE)
 
 #### Subset datasets ####
 # Both septa and IC distance
-septa.and.icdist.trimmed <- merge(septa.trimmed, ic.dist.trimmed, by = c("ID", "Species", "Species_mpha", "Depth", "Date", "Dive_Num", "Site", "Original_macrophoto_file_name", "Diver", "Notes", "Yellow.Ruler", "Angled_Ruler", "Blurry_Square", "Yellow_Ruler_Backgroud")) # these are the colonies that have both IC dist and septa measurements: 600 x 46
+septa.and.icdist.trimmed <- merge(septa.trimmed, ic.dist.trimmed, by = c("ID", "Species", "Species_mpha", "Depth", "Date", "Dive_Num", "Site", "Original_macrophoto_file_name", "Diver", "Notes", "Yellow.Ruler", "Angled_Ruler", "Blurry_Square", "Yellow_Ruler_Backgroud")) # these are the colonies that have both IC dist and septa measurements: 517 x 46
 
 # IC distance (white & yellow), without blurry white squares
 ic.dist.trimmed.quality <- ic.dist.trimmed[!ic.dist.trimmed$Blurry_Square %in% 'Blurry',] #remove blurry square
@@ -118,7 +131,7 @@ ic.by.species <- aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed,
 septa.and.icdist.by.species <- aggregate(list(septa = septa.and.icdist.trimmed$Mean_Septa, ic = septa.and.icdist.trimmed$Mean_IC), by = list(septa.and.icdist.trimmed$Species_mpha), FUN = function(x) c(mean = mean(x), se = std.error(x))) # both septa and ic dist
 
 #### Visualizing data: Scatterplots & boxplots ####
-# colors_mpha <- c("#ff6347", "#ff9a81", "#32a852", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #use when all of Nelly's dat are used for extra MPHA group
+# colors_mpha <- c("#ff6347", "#ff9a81", "#32a852", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #use when all of Nelly's data are used for extra MPHA group
 colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70") #for genotyped data only
 show_col(colors_mpha)
 
@@ -243,7 +256,7 @@ plot(TUKEY)
 png(file=here("morphology/figures/ic_dist_white_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
-a <- boxplot(ic.dist.trimmed.white$Mean_IC ~ ic.dist.trimmed.white$Species_mpha, col = colors_mpha, ylim = c(0.4,2.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
+a <- boxplot(ic.dist.trimmed.white$Mean_IC ~ ic.dist.trimmed.white$Species_mpha, col = colors_mpha, ylim = c(0.4,2.5), xlab = 'Genetic lineage', ylab = 'Average Intercorallite Distance (mm)', outline = FALSE)
 
 # Add data points
 # Points
@@ -322,7 +335,7 @@ plot(TUKEY2)
 png(file=here("morphology/figures/ic_dist_yellow_quality_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
-b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha, ylim = c(0.8,3.5), xlab = 'Species', ylab = 'Average Intercorallite Distance', outline = FALSE)
+b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha[-1], ylim = c(0.8,3.5), xlab = 'Genetic lineage', ylab = 'Average Intercorallite Distance (mm)', outline = FALSE)
 
 # Add data points
 # Points
@@ -382,7 +395,7 @@ plot(TUKEY3)
 png(file=here("morphology/figures/ic_dist_white_quality_geno.png"), width=8, height=6, res=300, units="in")
 
 # Basic boxplot
-c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = 'Species', ylab = 'Average Intercorallite Distance', ylim = c(0.8, 2.8), outline = FALSE)
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = 'Genetic lineage', ylab = 'Average Intercorallite Distance (mm)', ylim = c(0.8, 2.8), outline = FALSE)
 
 # Add data points
 # Points
@@ -419,17 +432,17 @@ par(
 )
 
 # Basic boxplot for yellow ruler
-b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha, ylim = c(1,3), xlab = '', ylab = '', outline = FALSE, main = 'Quality yellow ruler (n = 111)', las = 1, xaxt = 'n', yaxt = 'n')
+b <- boxplot(ic.dist.trimmed.yellow.quality$Mean_IC ~ ic.dist.trimmed.yellow.quality$Species_mpha, col = colors_mpha[-1], ylim = c(1,3), xlab = '', ylab = '', outline = FALSE, main = 'Quality yellow ruler (n = 105)', las = 1, xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
-mtext("Species", side = 1, line = 4)
+mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
-mtext("Average Intercorallite Distance", side = 2, line = 3)
+mtext("Average Intercorallite Distance (mm)", side = 2, line = 3)
 
-text(x = 1:6,
+text(x = 1:5,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), # "MPHA"
+     labels = c("MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), # "MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -454,20 +467,20 @@ LABELS2 <- generate_label_df(TUKEY2 , "ic.dist.trimmed.yellow.quality$Species_mp
 over <- 0.23*max( b$stats[nrow(b$stats),] )
 
 #Add the labels
-text( c(1:6) , b$stats[nrow(b$stats),]+over , LABELS2[,1]  , col= 'black' )
+text( c(1:5) , b$stats[nrow(b$stats),]+over , LABELS2[,1]  , col= 'black' )
 
 # Basic boxplot for quailty white squares
-c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(1, 3), outline = FALSE, main = 'Quality white square (n = 275)', xaxt = 'n', yaxt = 'n')
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(1, 3), outline = FALSE, main = 'Quality white square (n = 252)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
-mtext("Species", side = 1, line = 4)
+mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
-mtext("Average Intercorallite Distance", side = 2, line = 3)
+mtext("Average Intercorallite Distance (mm)", side = 2, line = 3)
 
 text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
+     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -540,9 +553,9 @@ par(
 )
 
 # Basic boxplot
-d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 529)', xaxt = 'n', yaxt = 'n')
+d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 491)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
-mtext("Species", side = 1, line = 4)
+mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
 mtext("Average Septa Count", side = 2, line = 3)
 
@@ -572,7 +585,7 @@ stripchart(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, # Data
 LABELS4 <- generate_label_df(TUKEY4 , "septa.trimmed$Species_mpha")
 
 # I want to write the letter over each box. Over is how high I want to write it.
-over <- 0.15*max( d$stats[nrow(d$stats),] )
+over <- 0.11*max( d$stats[nrow(d$stats),] )
 
 #Add the labels
 text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )

@@ -97,7 +97,7 @@ par(
   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
+  ps=16, # point size, which is the font size
   bty = 'n',
   mfrow = c(8,1))
 
@@ -109,28 +109,38 @@ for (j in 1:ncol(speciesbydepth)) {
   
   # Adjust margins for the last plot
   if (j == ncol(speciesbydepth)) {
-    par(mar = c(6, 4, 2, 1)) # Increased bottom margin
+    par(mar = c(7, 4.5, 2, 1)) # Increased bottom margin
   } else {
-    par(mar = c(2, 4, 2, 1)) # Default margin for other plots
+    par(mar = c(2, 4.5, 2, 1)) # Default margin for other plots
   }
   
-  barplot(height=as.matrix(t(speciesbydepth))[j,], names=rownames(speciesbydepth), col = colors_mpha, xlab = '', ylab = 'Count', ylim = c(0,80), xaxt = 'n', las = 2)
-  mtext(paste(colnames(speciesbydepth)[j], 'meters', sep = ' '), side=3, adj = 0, line = 0.7)
+  # Extract data for current depth
+  counts <- as.matrix(t(speciesbydepth))[j,]
+  
+  # Create barplot and store midpoints
+  bar_mids <- barplot(height = counts,
+                      names = rownames(speciesbydepth),
+                      col = colors_mpha,
+                      xlab = '', ylab = 'Count',
+                      ylim = c(0, 85), xaxt = 'n', las = 2)
+  
+  # Add depth label
+  mtext(paste(colnames(speciesbydepth)[j], 'meters', sep = ' '), side = 3, adj = 0, line = 0.65)
+  
+  # Add sample size labels above bars (only if > 0)
+  text(x = bar_mids[counts > 0],
+       y = counts[counts > 0] + 4,  # Offset above the bar
+       labels = counts[counts > 0],
+       cex = 0.9)
 }
 
+# Add x-axis labels and axis title for the combined plot
 text(x = c(0.7, 1.9, 3.1, 4.3, 5.5, 6.7, 7.9, 9.1, 10.3, 11.5),
-     ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 10,
-     ## Use names from the data list.
-     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3", "MPHA.ln4","MSEN", "UNKN"), # "MPHA"
-     ## Change the clipping region.
-     xpd = NA,
-     ## Rotate the labels by 35 degrees.
-     srt = 35,
-     ## Adjust the labels to almost 100% right-justified.
-     adj = 0.965)
+     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3", "MPHA.ln4","MSEN", "UNKN"),
+     xpd = NA, srt = 35, adj = 0.965)
 
-mtext('Species', side = 1, line = 5)
+mtext('Genetic lineage', side = 1, line = 5.75)
 
 dev.off()
 
@@ -148,24 +158,24 @@ for (i in 1:nrow(speciesbydepth)) {
 
 #### Plot ####
 # Barplot
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_bar.png", width=2, height=15, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_bar.png", width=12, height=16, res=300, units="in")
 
 par(
-  mar=c(4, 4, 3, 1), # panel margin size in "line number" units
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
+  ps=17, # point size, which is the font size
   bty = 'n',
-  mfrow = c(10,1))
+  mfrow = c(5,2))
 
 for (j in 1:nrow(depthbyspecies)) {
-  barplot(height=as.matrix(depthbyspecies[j,]), names=colnames(depthbyspecies), xlab = 'Depth', ylab = 'Proportion', main = paste(rownames(depthbyspecies)[j], ' (n =', rowSums(speciesbydepth)[j], ')', sep = ''), col = colors_mpha[j], ylim = c(0,1))
+  barplot(height=as.matrix(depthbyspecies[j,]), names=colnames(depthbyspecies), xlab = 'Depth', ylab = 'Proportion', main = paste(rownames(depthbyspecies)[j], ' (n = ', rowSums(speciesbydepth)[j], ')', sep = ''), col = colors_mpha[j], ylim = c(0,1), las = 1, cex.main = 1.5)
 }
 
 dev.off()
 
-d# Pie chart
+# Pie chart
 png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_pie.png", width=9, height=7, res=300, units="in")
 
 par(

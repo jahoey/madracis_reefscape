@@ -8,6 +8,7 @@ library(multcompView)
 library(FSA)
 library(visreg)
 library(stringr)
+library(tidyverse)
 
 #### Functions ####
 # Function to draw error bar later
@@ -119,7 +120,6 @@ ic.dist.trimmed.white.quality <- ic.dist.trimmed.white[!ic.dist.trimmed.white$Bl
 
 # High quality yellow ruler
 ic.dist.trimmed.yellow.quality <- ic.dist.trimmed.yellow[!ic.dist.trimmed.yellow$Angled_Ruler %in% 'Angled',] #remove angled
-
 
 #### Measurements by species ####
 septa.by.species <- aggregate(Mean_Septa ~ Species_mpha, data = septa.trimmed, 
@@ -592,12 +592,6 @@ text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
 
 dev.off()
 
-# Kruskal-Wallis Test
-septa.kw <- kruskal.test(Mean_Septa ~ Species_mpha, data = septa.trimmed)
-septa.kw
-
-dunnTest(Mean_Septa ~ Species_mpha, data = septa.trimmed, method = 'holm')
-
 # Plot combination plot of IC distance for quality white squares and septa count
 png(file=here("morphology/figures/septa_and_ic_dist_quality_white_geno.png"), width=9, height=5, res=300, units="in")
 
@@ -692,111 +686,111 @@ dev.off()
 
 
 #### Measurements broken out by depth, regardless of scale used (both yellow & white) ####
-septa.and.icdist.trimmed # colonies with both data for septa & IC dist
-ic.dist.trimmed # colonies with data for IC dist
+# septa.and.icdist.trimmed # colonies with both data for septa & IC dist
+# ic.dist.trimmed # colonies with data for IC dist
 ic.dist.trimmed.white.quality # colonies with quality data for IC dist
 
 # All IC dist data
-ic.dist.trimmed$Species_mpha <- factor(ic.dist.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN", "UNKN"))
-
-ic.dist.trimmed.5 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 5),]
-ic.dist.trimmed.10 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 10),]
-ic.dist.trimmed.20 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 20),]
-ic.dist.trimmed.40 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 40),]
-ic.dist.trimmed.60 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 60),]
-
-png(file=here(here("morphology/figures/ic_dist_all_by_depth_geno.png")), width=4, height=11.25, res=300, units="in")
-
-par(
-  mar=c(2, 4, 2, 1), # panel margin size in "line number" units
-  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
-  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
-  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
-  bty = 'n',
-  mfrow = c(5,1)
-)
-
-# Define a layout with equal panel heights but adjust space for the last plot
-layout_matrix <- matrix(1:5, ncol = 1)
-layout(layout_matrix, heights = c(rep(1, 5 - 1), 1.2)) # Larger height for the last plot
-
-e1 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.5, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
-axis(1, labels = FALSE)
-mtext("5 meters", side=3, adj = 0, line = 0.7)
-
-# Points
-stripchart(ic.dist.trimmed.5$Mean_IC ~ ic.dist.trimmed.5$Species_mpha, # Data
-           method = "jitter", # Random noise
-           pch = 1,          # Pch symbols
-           col = 'black',           # Color of the symbol
-           vertical = TRUE,   # Vertical mode
-           add = TRUE)        # Add it over
-
-e2 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.10, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
-axis(1, labels = FALSE)
-mtext("10 meters", side=3, adj = 0, line = 0.7)
-
-# Points
-stripchart(ic.dist.trimmed.10$Mean_IC ~ ic.dist.trimmed.10$Species_mpha, # Data
-           method = "jitter", # Random noise
-           pch = 1,          # Pch symbols
-           col = 'black',           # Color of the symbol
-           vertical = TRUE,   # Vertical mode
-           add = TRUE)        # Add it over
-
-e3 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.20, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = 'Species', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
-axis(1, labels = FALSE)
-mtext("20 meters", side=3, adj = 0, line = 0.7)
-
-# Points
-stripchart(ic.dist.trimmed.20$Mean_IC ~ ic.dist.trimmed.20$Species_mpha, # Data
-           method = "jitter", # Random noise
-           pch = 1,          # Pch symbols
-           col = 'black',           # Color of the symbol
-           vertical = TRUE,   # Vertical mode
-           add = TRUE)        # Add it over
-
-e4 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.40, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = 'Species', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
-axis(1, labels = FALSE)
-mtext("40 meters", side=3, adj = 0, line = 0.7)
-
-# Points
-stripchart(ic.dist.trimmed.40$Mean_IC ~ ic.dist.trimmed.40$Species_mpha, # Data
-           method = "jitter", # Random noise
-           pch = 1,          # Pch symbols
-           col = 'black',           # Color of the symbol
-           vertical = TRUE,   # Vertical mode
-           add = TRUE)        # Add it over
-
-par(mar = c(6, 4, 2, 1))
-e5 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.60, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
-axis(1, labels = FALSE)
-mtext("60 meters", side=3, adj = 0, line = 0.7)
-
-# Points
-stripchart(ic.dist.trimmed.60$Mean_IC ~ ic.dist.trimmed.60$Species_mpha, # Data
-           method = "jitter", # Random noise
-           pch = 1,          # Pch symbols
-           col = 'black',           # Color of the symbol
-           vertical = TRUE,   # Vertical mode
-           add = TRUE)        # Add it over
-
-text(x = c(1:7),
-     ## Move labels to just below bottom of chart.
-     y = par("usr")[3] - 0.5,
-     ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN", "UNKN"),
-     ## Change the clipping region.
-     xpd = NA,
-     ## Rotate the labels by 35 degrees.
-     srt = 35,
-     ## Adjust the labels to almost 100% right-justified.
-     adj = 0.965)
-
-mtext('Species', side = 1, line = 5)
-
-dev.off()
+# ic.dist.trimmed$Species_mpha <- factor(ic.dist.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN", "UNKN"))
+# 
+# ic.dist.trimmed.5 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 5),]
+# ic.dist.trimmed.10 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 10),]
+# ic.dist.trimmed.20 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 20),]
+# ic.dist.trimmed.40 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 40),]
+# ic.dist.trimmed.60 <- ic.dist.trimmed[which(ic.dist.trimmed$Depth == 60),]
+# 
+# png(file=here(here("morphology/figures/ic_dist_all_by_depth_geno.png")), width=4, height=11.25, res=300, units="in")
+# 
+# par(
+#   mar=c(2, 4, 2, 1), # panel margin size in "line number" units
+#   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+#   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+#   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+#   ps=14, # point size, which is the font size
+#   bty = 'n',
+#   mfrow = c(5,1)
+# )
+# 
+# # Define a layout with equal panel heights but adjust space for the last plot
+# layout_matrix <- matrix(1:5, ncol = 1)
+# layout(layout_matrix, heights = c(rep(1, 5 - 1), 1.2)) # Larger height for the last plot
+# 
+# e1 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.5, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
+# axis(1, labels = FALSE)
+# mtext("5 meters", side=3, adj = 0, line = 0.7)
+# 
+# # Points
+# stripchart(ic.dist.trimmed.5$Mean_IC ~ ic.dist.trimmed.5$Species_mpha, # Data
+#            method = "jitter", # Random noise
+#            pch = 1,          # Pch symbols
+#            col = 'black',           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)        # Add it over
+# 
+# e2 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.10, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
+# axis(1, labels = FALSE)
+# mtext("10 meters", side=3, adj = 0, line = 0.7)
+# 
+# # Points
+# stripchart(ic.dist.trimmed.10$Mean_IC ~ ic.dist.trimmed.10$Species_mpha, # Data
+#            method = "jitter", # Random noise
+#            pch = 1,          # Pch symbols
+#            col = 'black',           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)        # Add it over
+# 
+# e3 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.20, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = 'Species', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
+# axis(1, labels = FALSE)
+# mtext("20 meters", side=3, adj = 0, line = 0.7)
+# 
+# # Points
+# stripchart(ic.dist.trimmed.20$Mean_IC ~ ic.dist.trimmed.20$Species_mpha, # Data
+#            method = "jitter", # Random noise
+#            pch = 1,          # Pch symbols
+#            col = 'black',           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)        # Add it over
+# 
+# e4 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.40, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = 'Species', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
+# axis(1, labels = FALSE)
+# mtext("40 meters", side=3, adj = 0, line = 0.7)
+# 
+# # Points
+# stripchart(ic.dist.trimmed.40$Mean_IC ~ ic.dist.trimmed.40$Species_mpha, # Data
+#            method = "jitter", # Random noise
+#            pch = 1,          # Pch symbols
+#            col = 'black',           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)        # Add it over
+# 
+# par(mar = c(6, 4, 2, 1))
+# e5 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.60, col = colors_mpha, ylim = c(0,4), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
+# axis(1, labels = FALSE)
+# mtext("60 meters", side=3, adj = 0, line = 0.7)
+# 
+# # Points
+# stripchart(ic.dist.trimmed.60$Mean_IC ~ ic.dist.trimmed.60$Species_mpha, # Data
+#            method = "jitter", # Random noise
+#            pch = 1,          # Pch symbols
+#            col = 'black',           # Color of the symbol
+#            vertical = TRUE,   # Vertical mode
+#            add = TRUE)        # Add it over
+# 
+# text(x = c(1:7),
+#      ## Move labels to just below bottom of chart.
+#      y = par("usr")[3] - 0.5,
+#      ## Use names from the data list.
+#      labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN", "UNKN"),
+#      ## Change the clipping region.
+#      xpd = NA,
+#      ## Rotate the labels by 35 degrees.
+#      srt = 35,
+#      ## Adjust the labels to almost 100% right-justified.
+#      adj = 0.965)
+# 
+# mtext('Species', side = 1, line = 5)
+# 
+# dev.off()
 
 # White quality only for IC dist
 ic.dist.trimmed.white.quality$Species_mpha <- factor(ic.dist.trimmed.white.quality$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"))
@@ -807,7 +801,7 @@ ic.dist.trimmed.white.quality.20 <- ic.dist.trimmed.white.quality[which(ic.dist.
 ic.dist.trimmed.white.quality.40 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 40),]
 ic.dist.trimmed.white.quality.60 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 60),]
 
-png(file=here(here("morphology/figures/ic_dist_white_quality_by_depth_geno.png")), width=4, height=11.25, res=300, units="in")
+png(file=here(here("morphology/figures/ic_dist_white_quality_by_depth_geno2.png")), width=14, height=4.25, res=300, units="in")
 
 par(
   mar=c(2, 4, 2, 1), # panel margin size in "line number" units
@@ -816,12 +810,12 @@ par(
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
   ps=14, # point size, which is the font size
   bty = 'n',
-  mfrow = c(5,1)
+  mfrow = c(1,5)
 )
 
 # Define a layout with equal panel heights but adjust space for the last plot
-layout_matrix <- matrix(1:5, ncol = 1)
-layout(layout_matrix, heights = c(rep(1, 5 - 1), 1.2)) # Larger height for the last plot
+layout_matrix <- matrix(1:5, ncol = 5)
+# layout(layout_matrix, heights = c(rep(1, 5 - 1), 1.2)) # Larger height for the last plot
 
 f1 <- boxplot(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality.5, col = colors_mpha, ylim = c(0.5,2.5), outline = FALSE, xlab = '', ylab = 'Average Intercorallite Distance', xaxt = 'n', las = 2)
 axis(1, labels = FALSE)
@@ -896,7 +890,7 @@ text(x = c(1:6),
      ## Adjust the labels to almost 100% right-justified.
      adj = 0.965)
 
-mtext('Species', side = 1, line = 5)
+mtext('Genetic lineage', side = 1, line = 5)
 
 dev.off()
 
@@ -1003,6 +997,98 @@ mtext('Species', side = 1, line = 5)
 dev.off()
 
 
+# Plotting IC distance for each depth
+plot_boxplot_depth_anova <- function(df, y_var = "Mean_IC") {
+  
+  # --- run Tukey or t-tests by depth ---
+  tukey_results <- df %>%
+    group_by(Depth) %>%
+    group_split() %>%
+    lapply(function(sub_df) {
+      n_groups <- length(unique(sub_df$Species_mpha))
+      if (n_groups < 2) return(NULL)  # skip single-group depths
+      
+      if (n_groups == 2) {
+        # t-test case
+        ttest <- t.test(sub_df[[y_var]] ~ sub_df$Species_mpha)
+        sig <- ttest$p.value < 0.05
+        labs <- if (sig) c("a", "b") else c("a", "a")
+        names(labs) <- unique(sub_df$Species_mpha)
+      } else {
+        # ANOVA + Tukey case
+        anova_model <- aov(sub_df[[y_var]] ~ sub_df$Species_mpha)
+        tukey_test <- tryCatch(TukeyHSD(anova_model), error = function(e) NULL)
+        if (is.null(tukey_test)) return(NULL)
+        
+        tukey_values <- tukey_test$`sub_df$Species_mpha`[, "p adj"]
+        if (is.null(names(tukey_values)) || length(tukey_values) == 0) return(NULL)
+        names(tukey_values) <- as.character(names(tukey_values))
+        
+        labs <- multcompLetters(tukey_values < 0.05)$Letters
+      }
+      
+      data.frame(
+        Species_mpha = names(labs),
+        Letters = labs,
+        Depth = unique(sub_df$Depth)
+      )
+    }) %>%
+    bind_rows()
+  
+  # --- compute max y-values for label placement ---
+  y_max <- df %>%
+    group_by(Depth, Species_mpha) %>%
+    summarize(max_y = max(.data[[y_var]], na.rm = TRUE), .groups = "drop")
+  
+  # --- only join if tukey_results has rows ---
+  if (!is.null(tukey_results) && nrow(tukey_results) > 0) {
+    tukey_results <- left_join(tukey_results, y_max,
+                               by = c("Depth", "Species_mpha"))
+  } else {
+    tukey_results <- y_max %>% mutate(Letters = "")
+  }
+  
+  # --- plot ---
+  ggplot(df, aes(x = Species_mpha, y = .data[[y_var]], fill = Species_mpha)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(width = 0.2, alpha = 0.4, size = 2) +
+    facet_grid(~ Depth, scales = "free", space = "free_x") +
+    ylim(0.95,2.5) +
+    geom_text(
+      data = tukey_results, 
+      aes(x = Species_mpha, y = max_y * 1.05, label = Letters),
+      color = "black", size = 5, fontface = "bold", na.rm = TRUE
+    ) +
+    labs(x = "Genetic lineage", y = "Avg IC distance (mm)", fill = "lineage") +
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      strip.text = element_text(face = "bold"),
+      axis.ticks = element_line(color = "black", linewidth = 0.5),
+      axis.ticks.length = unit(0.15, "cm")
+    ) +
+    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6"))
+}
+
+
+
+
+# Nice plot summarizing morphology across depths and genetic lineages
+png(file=here("morphology/figures/morphology_anova.png"), width=10, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_depth_anova(ic.dist.trimmed.white.quality)
+
+dev.off()
 
 
 

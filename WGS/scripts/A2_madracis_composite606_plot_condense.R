@@ -53,7 +53,7 @@ madracis_clusters_k8 <- read.delim(here("WGS/angsd_results/madracis606/admixture
 madracis_clusters_k8_ordered <- madracis_clusters_k8[,c(5,2:4,6:8,1)]
 
 # DAPC results
-madracis_dapc_pc5_post <- read.delim(here('WGS/angsd_results/madracis606/madracis606_dapc_5pcs_posteriors.txt'), header = TRUE, sep = '\t')
+madracis_dapc_pc5_post <- read.delim(here('WGS/angsd_results/madracis606/madracis606_dapc_5pcs_posteriors_Oct2025.txt'), header = TRUE, sep = '\t')
 
 #### Option 1: Load bam names to assign species ####
 # bam_paths <- read.table(here("angsd_results/bam_lists/angsd_bam_list_653.txt"), header = FALSE, sep = '\t', col.names = c('path'))
@@ -74,7 +74,7 @@ madracis_dapc_pc5_post <- read.delim(here('WGS/angsd_results/madracis606/madraci
 # names4 <- paste(species, site, depth, id_original, extract, sep = "_")
 
 #### Option 2: Load IDs directly ####
-ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2024.csv"), header = TRUE) # 606 Madracis, no clones
+ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2025.csv"), header = TRUE) # 606 Madracis, no clones
 
 metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
 colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
@@ -83,7 +83,7 @@ metadata$depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting g
 metadata$sample_full <- ids$new_ID
 
 # Get cluster assignments for coloring the points
-data_cluster <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
+data_cluster <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 metadata$species_mpha <- data_cluster[match(metadata$id_original, data_cluster$ID), 7]
 
@@ -96,12 +96,12 @@ metadata$species_mpha[which(metadata$species == 'MPHA' & metadata$depth >60)] <-
 
 # Deal with the Pim MPHAs, which are mostly MSEN-like MPHAs (MPHA.ln4)
 metadata[which(metadata$id_original == 'PB_4583'),9] <- 'MPHA.ln2'
-metadata[which(metadata$id_original == 'PB_4578'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4577'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4576'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4579'),9] <- 'MPHA.ln4'
+metadata[which(metadata$id_original == 'PB_4578'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4577'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4576'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4579'),9] <- 'MSEN.ln2'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MPHA.ln4', 'MSEN', 'UNKN')) #reorder the species factors
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) #reorder the species factors
 
 #### Add labels ####
 madracis_tree$tip.label <- ids$new_ID # when ids are directly read in
@@ -180,11 +180,13 @@ madracis_dapc_pc5_post_melt <- melt(madracis_dapc_pc5_post)
 # species.table$depth[which(species.table$depth >61)] <- 5 # depths greater than 61
 
 #### Set color scheme ####
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8"
+colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # new colors, "#2664d8"
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8" # for when MSEN.ln2 were MPHA.ln4
 show_col(colors_mpha)
 
 # For STRUCTURE plots
-colors_struc <- c("#E6AB02", "#6b8e23", "#ff9a81", "gray70", "#b0e0e6", "#b6c590", "#79d2a6", "#E7298A", "#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70")
+colors_struc <- c("#E6AB02", "#6b8e23", "#ff9a81", "gray70", "#b0e0e6", "#b6c590", "cornflowerblue", "#E7298A", "#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70")
+# colors_struc <- c("#E6AB02", "#6b8e23", "#ff9a81", "gray70", "#b0e0e6", "#b6c590", "#79d2a6", "#E7298A", "#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # for when MSEN.ln2 were MPHA.ln4
 show_col(colors_struc)
 
 colors_heatmap <- c("#DCE318FF", "#B8DE29FF", "#74D055FF", "#20A386FF", "#238A8DFF", "#2D718EFF", "#453781FF", "#481568FF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6", "#4292C6", "#2171B5", "#08519C", "#08306B")
@@ -212,7 +214,7 @@ species.table2 <- species.table[match(tree_reroot_names, species.table$sample_fu
 
 p1 <- njtree %<+% species.table2 + 
   geom_tippoint(aes(color = factor(species_mpha), shape = factor(species_mpha)), align=TRUE, size=1)  +
-  scale_color_manual(values = colors_mpha, limits = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MPHA.ln4', 'MSEN', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm'), strip.text.x = element_blank())
+  scale_color_manual(values = colors_mpha, limits = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm'), strip.text.x = element_blank())
 
 p1.1 <- rotate(p1, 926)
 p1.2 <- rotate(p1.1, 1047)

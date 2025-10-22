@@ -3,7 +3,7 @@ library(stringr)
 library(scales)
 library(RColorBrewer)
 
-ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2024.csv"), header = TRUE) # 606 Madracis, no clones
+ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2025.csv"), header = TRUE) # 606 Madracis, no clones
 
 metadata <- as.data.frame(str_split_fixed(ids$new_ID, '_', 6))
 colnames(metadata) <- c('species', 'site', 'depth', 'collector', 'ID', 'extract')
@@ -12,7 +12,7 @@ metadata$depth <- as.numeric(metadata[,3]) # Must be numeric or the subsetting g
 metadata$sample_full <- ids$new_ID
 
 # Get cluster assignments for coloring the points
-data_cluster <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
+data_cluster <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 metadata$species_mpha <- data_cluster[match(metadata$id_original, data_cluster$ID), 7]
 
@@ -25,15 +25,16 @@ metadata$species_mpha[which(metadata$species == 'MPHA' & metadata$depth >60)] <-
 
 # Deal with the Pim MPHAs, which are mostly MSEN-like MPHAs
 metadata[which(metadata$id_original == 'PB_4583'),9] <- 'MPHA.ln2'
-metadata[which(metadata$id_original == 'PB_4578'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4577'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4576'),9] <- 'MPHA.ln4'
-metadata[which(metadata$id_original == 'PB_4579'),9] <- 'MPHA.ln4'
+metadata[which(metadata$id_original == 'PB_4578'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4577'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4576'),9] <- 'MSEN.ln2'
+metadata[which(metadata$id_original == 'PB_4579'),9] <- 'MSEN.ln2'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MPHA.ln4', 'MSEN', 'UNKN')) #reorder the species factors
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) #reorder the species factors
 
 #### Set color scheme ####
-colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # new colors, "#2664d8"
+colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2
+# colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#79d2a6", "#b0e0e6", "gray70") # colors for MPHA.ln4
 show_col(colors_mpha)
 
 colors_depth <- brewer.pal(8, 'Dark2')
@@ -137,7 +138,7 @@ for (j in 1:ncol(speciesbydepth)) {
 # Add x-axis labels and axis title for the combined plot
 text(x = c(0.7, 1.9, 3.1, 4.3, 5.5, 6.7, 7.9, 9.1, 10.3, 11.5),
      y = par("usr")[3] - 10,
-     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3", "MPHA.ln4","MSEN", "UNKN"),
+     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3","MSEN.ln1", "MSEN.ln2", "UNKN"),
      xpd = NA, srt = 35, adj = 0.965)
 
 mtext('Genetic lineage', side = 1, line = 5.75)

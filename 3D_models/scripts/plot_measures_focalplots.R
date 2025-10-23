@@ -46,7 +46,7 @@ generate_label_df <- function(TUKEY, variable){
 } # function to generate Tukey groups for plotting
 
 #### Read in metadata to check genotyping status ####
-metadata <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
+metadata <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
@@ -275,7 +275,7 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
 # Reduce to only MDEC, MPHA1, MPHA2 & MSEN 
-mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN'),] # 286 x 26
+mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN.ln1'),] # 286 x 26
 mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,190),] # remove MSEN from 5 (row 180) and 40m (row 190) #284 x 26
 
 # Plotting function for multiple y variables

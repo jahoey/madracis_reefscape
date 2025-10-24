@@ -43,7 +43,7 @@ generate_label_df <- function(TUKEY, variable){
 }
 
 #### Read in Nelly's & genotyped data ####
-data <- read.delim(here("morphology/data/Nelly_data_May2024_updatedspeciesMPHA_rescaled.csv"), header = TRUE, sep = ',') #691 x 44
+data <- read.delim(here("morphology/data/Nelly_data_May2024_updatedspeciesMPHA_rescaled_2025.csv"), header = TRUE, sep = ',') #691 x 44
 
 jah <- read.delim("~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/bam_lists/ids_recoded672.csv", header = TRUE, sep = ',') #672 x 3
 
@@ -73,9 +73,9 @@ madracis_data$ID %in% Madracis606_names # identify potential clones and carefull
 madracis_data[!madracis_data$ID %in% Madracis606_names,]$ID # potential clones. Clone pair can be seen in 06a_merge_sample_bams.sh. Check to see if pair is on the list below. If yes, remove one
 madracis_data[madracis_data$ID %in% Madracis606_names,]$ID # were genotyped, but could have a clone
 
-clones <- c('JH_0033', 'JH_0062', 'JH_0071', 'JH_0079', 'JH_0089', 'JH_0122', 'JH_0143', 'JH_0192', 'JH_0212', 'JH_0221', 'JH_0287','JH_0306','JH_0381','JH_0387','JH_0404','JH_0405','JH_0409','JH_0420', 'JH_0463','JH_0464','JH_0466', 'JH_0475', 'JH_0476','JH_0483','JH_0517','JH_0539','JH_0540','JH_0544','JH_0545','JH_0547','JH_0555','JH_0593','JH_0617','JH_0618','JH_0651','JH_0657', 'JH_0661','JH_0663','JH_0677', 'JH_0694','JH_0696','JH_0707') # clones; MCAR clones are JH_0136 and JH_0143 - keep JH_0136 b/c measured using white square
+clones <- c('JH_0033', 'JH_0062', 'JH_0071', 'JH_0079', 'JH_0089', 'JH_0122', 'JH_0143', 'JH_0192', 'JH_0212', 'JH_0221', 'JH_0287','JH_0306','JH_0381','JH_0387','JH_0404','JH_0405','JH_0409','JH_0420', 'JH_0463','JH_0464','JH_0466', 'JH_0475', 'JH_0476','JH_0483','JH_0517','JH_0539','JH_0540','JH_0544','JH_0545','JH_0547','JH_0555','JH_0593','JH_0617','JH_0618','JH_0651','JH_0657', 'JH_0661','JH_0663','JH_0677', 'JH_0694','JH_0696','JH_0707', 'JH_0384') # clones; MCAR clones are JH_0136 and JH_0143 - keep JH_0136 b/c measured using white square; remove JH_0384 because JH_0385 actually got measured in this photo
 
-madracis_data2 <- madracis_data[!madracis_data$ID %in% clones, ] # remove the clones; 550 x 44
+madracis_data2 <- madracis_data[!madracis_data$ID %in% clones, ] # remove the clones; 549 x 44
 
 #### Divide the dataframe into 2 separate dataframes: one for septa and one for IC distance ####
 # Intercorallite distance
@@ -132,7 +132,7 @@ septa.and.icdist.by.species <- aggregate(list(septa = septa.and.icdist.trimmed$M
 
 #### Visualizing data: Scatterplots & boxplots ####
 # colors_mpha <- c("#ff6347", "#ff9a81", "#32a852", "#b6c590", "#6b8e23", "#b0e0e6", "gray70") #use when all of Nelly's data are used for extra MPHA group
-colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6", "gray70") #for genotyped data only
+colors_mpha <- c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "cornflowerblue", "gray70") #for genotyped data only
 show_col(colors_mpha)
 
 # Yellow ruler vs white square
@@ -442,7 +442,7 @@ text(x = 1:5,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), # "MPHA"
+     labels = c("MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2"), # "MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -480,7 +480,7 @@ text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
+     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -553,7 +553,7 @@ par(
 )
 
 # Basic boxplot
-d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 491)', xaxt = 'n', yaxt = 'n')
+d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 490)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
 mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
@@ -563,7 +563,7 @@ text(x = 1:7,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.4,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN","UNKN"), #"MPHA"
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2","UNKN"),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -606,7 +606,7 @@ par(
 )
 
 # Basic boxplot for septa count
-d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 491)', xaxt = 'n', yaxt = 'n')
+d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 490)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
 mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
@@ -616,7 +616,7 @@ text(x = 1:7,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.4,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN","UNKN"), #"MPHA"
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2","UNKN"),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -644,7 +644,7 @@ over <- 0.11*max( d$stats[nrow(d$stats),] )
 text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
 
 # Basic boxplot for quailty white squares
-c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(1, 3), outline = FALSE, main = 'Intercorallite Distance (n = 252)', xaxt = 'n', yaxt = 'n')
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(0.75, 2.8), outline = FALSE, main = 'Intercorallite Distance (n = 252)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
 mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
@@ -654,7 +654,7 @@ text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN"), #"MPHA"
+     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -676,7 +676,7 @@ stripchart(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality
 LABELS3 <- generate_label_df(TUKEY3 , "ic.dist.trimmed.white.quality$Species_mpha")
 
 # I want to write the letter over each box. Over is how high I want to write it.
-over <- 0.25*max(c$stats[nrow(c$stats),] )
+over <- 0.14*max(c$stats[nrow(c$stats),] )
 
 #Add the labels
 text( c(1:6) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
@@ -793,7 +793,7 @@ ic.dist.trimmed.white.quality # colonies with quality data for IC dist
 # dev.off()
 
 # White quality only for IC dist
-ic.dist.trimmed.white.quality$Species_mpha <- factor(ic.dist.trimmed.white.quality$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN"))
+ic.dist.trimmed.white.quality$Species_mpha <- factor(ic.dist.trimmed.white.quality$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MSEN.ln1", "MSEN.ln2"))
 
 ic.dist.trimmed.white.quality.5 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 5),]
 ic.dist.trimmed.white.quality.10 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 10),]
@@ -895,7 +895,7 @@ mtext('Genetic lineage', side = 1, line = 5)
 dev.off()
 
 #### All septa data broken out by depth ####
-septa.trimmed$Species_mpha <- factor(septa.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN", "UNKN"))
+septa.trimmed$Species_mpha <- factor(septa.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MSEN.ln1", "MSEN.ln2", "UNKN"))
 
 septa.trimmed.5 <- septa.trimmed[which(septa.trimmed$Depth == 5),]
 septa.trimmed.10 <- septa.trimmed[which(septa.trimmed$Depth == 10),]
@@ -984,7 +984,7 @@ text(x = c(1:7),
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.7,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2", "MPHA.ln4","MSEN", "UNKN"),
+     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2", "UNKN"),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -1069,7 +1069,7 @@ plot_boxplot_depth_anova <- function(df, y_var = "Mean_IC") {
       axis.ticks = element_line(color = "black", linewidth = 0.5),
       axis.ticks.length = unit(0.15, "cm")
     ) +
-    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#79d2a6", "#b0e0e6"))
+    scale_fill_manual(values = c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "cornflowerblue"))
 }
 
 

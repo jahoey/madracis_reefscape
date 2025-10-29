@@ -129,7 +129,7 @@ show_col(colors16)
 # Set plotting order
 ord <- as.integer(rownames(metadata2))
 
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/admixture/k5-15_best.png", width=40, height=30, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/admixture/k5-15_best.png", width=40, height=30, res=600, units="in")
 
 par(mfrow = c(12,1),
     mar = c(0.5, 3.5, 0.5, 1),

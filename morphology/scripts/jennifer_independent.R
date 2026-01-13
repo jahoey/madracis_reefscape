@@ -101,6 +101,11 @@ septa.trimmed$Mean_Septa <- rowMeans(septa.trimmed[, 10:24], na.rm = TRUE)
 
 ic.dist.trimmed$Mean_IC <- rowMeans(ic.dist.trimmed[, 10:24], na.rm = TRUE)
 
+#### Calculate the SD of columns 9 through 23 and store it in a new column ####
+septa.trimmed$SD_Septa <- apply(septa.trimmed[, 10:24], 1, sd, na.rm = TRUE)
+
+ic.dist.trimmed$SD_IC <- apply(ic.dist.trimmed[, 10:24], 1, sd, na.rm = TRUE)
+
 #### Subset datasets ####
 # Both septa and IC distance
 septa.and.icdist.trimmed <- merge(septa.trimmed, ic.dist.trimmed, by = c("ID", "Species", "Species_mpha", "Depth", "Date", "Dive_Num", "Site", "Original_macrophoto_file_name", "Diver", "Notes", "Yellow.Ruler", "Angled_Ruler", "Blurry_Square", "Yellow_Ruler_Backgroud")) # these are the colonies that have both IC dist and septa measurements: 517 x 46
@@ -163,7 +168,7 @@ ggplot(ic.dist.trimmed) +
   theme_minimal()
 
 # IC distance: Yellow vs quality white squares
-ggplot(ic.dist.trimmed.quality) +
+ggplot(c) +
   aes(x = Species_mpha, y = Mean_IC, colour = Yellow.Ruler) +
   geom_point() +
   scale_color_discrete() +
@@ -644,11 +649,11 @@ over <- 0.11*max( d$stats[nrow(d$stats),] )
 text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
 
 # Basic boxplot for quailty white squares
-c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(0.75, 2.8), outline = FALSE, main = 'Intercorallite Distance (n = 252)', xaxt = 'n', yaxt = 'n')
+c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(0.75, 2.8), outline = FALSE, main = 'Inter-columella  Distance (n = 252)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
 mtext("Genetic lineage", side = 1, line = 4)
 axis(2, las = 2)
-mtext("Average Intercorallite Distance (mm)", side = 2, line = 3)
+mtext("Average Inter-columella  Distance (mm)", side = 2, line = 3)
 
 text(x = 1:6,
      ## Move labels to just below bottom of chart.
@@ -1072,7 +1077,9 @@ plot_boxplot_depth_anova <- function(df, y_var = "Mean_IC") {
     scale_fill_manual(values = c("#ff6347", "#ff9a81", "#b6c590", "#6b8e23", "#b0e0e6", "cornflowerblue"))
 }
 
-
+#### Individual variation in septa count and IC dist ####
+hist(septa.trimmed$SD_Septa, main = 'Septa', xlab = 'Within-colony variation (standard deviation)')
+hist(ic.dist.trimmed.white.quality$SD_IC, main = 'Columnar Distance', xlab = 'Within-colony variation (standard deviation)')
 
 
 # Nice plot summarizing morphology across depths and genetic lineages

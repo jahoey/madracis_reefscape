@@ -1078,8 +1078,22 @@ plot_boxplot_depth_anova <- function(df, y_var = "Mean_IC") {
 }
 
 #### Individual variation in septa count and IC dist ####
-hist(septa.trimmed$SD_Septa, main = 'Septa', xlab = 'Within-colony variation (standard deviation)')
-hist(ic.dist.trimmed.white.quality$SD_IC, main = 'Columnar Distance', xlab = 'Within-colony variation (standard deviation)')
+png(file=here("morphology/figures/sd_septa_and_ic_dist_quality_white_geno.png"), width=9, height=5, res=300, units="in")
+
+par(
+  mar=c(5, 4, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(1,2)
+)
+
+hist(septa.trimmed$SD_Septa, main = 'Standard Deviation of \nSepta (n = 490)', xlab = 'Within-colony variation (count)')
+hist(ic.dist.trimmed.white.quality$SD_IC, main = 'Standard Deviation of \nInter-columella Distance (n = 252)', xlab = 'Within-colony variation (mm)')
+
+dev.off()
 
 
 # Nice plot summarizing morphology across depths and genetic lineages

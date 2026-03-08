@@ -50,7 +50,7 @@ metadata <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
-directory <- here("3D_models/output/hab_measures")
+directory <- here("3D_models/output/hab_measures_03062026/")
 
 # List all CSV files with the pattern *_measurements.csv; modify depending on desired radius
 csv_files <- list.files(path = directory, pattern = "measurements_quality.csv", full.names = TRUE)
@@ -58,10 +58,11 @@ csv_files <- list.files(path = directory, pattern = "measurements_quality.csv", 
 # Function to extract the desired parts of the file name
 extract_parts <- function(file_path) {
   file_name <- basename(file_path)
-  # Extract the part of the file name (e.g., "est_05" from "est_05m_example_measurements_jah_quality.csv" or "cur_est_05m_measurements.csv")
-  #site <- str_extract(file_name, "^[a-z]+")  # Extract 'est' when it is first
-  site <- str_match(file_name, "cur_(\\w+?)_")[,2] # When cur is first, extract the second set of letters (est)
-  depth <- str_extract(file_name, "\\d+")     # Extract '05'
+  parts <- strsplit(file_name, "_")[[1]]
+  
+  site  <- parts[2]
+  depth <- gsub("m", "", parts[3])
+  
   return(list(site = site, depth = depth))
 }
 
@@ -84,22 +85,19 @@ for (file in csv_files) {
 }
 
 # Verify that the objects have been created and they have the correct dimensions; these are for radius 0.2
-dim(dir_05) #5x25
-dim(est_05) #9x25
-dim(est_10) #66x25
-dim(est_20) #54x25
-dim(est_40) #32x25
-dim(est_60) #14x25
-dim(kal_05) #13x25
-dim(kal_10) #55x25
-dim(kal_20) #48x25
-dim(kal_40) #19x25
-dim(sea_10) #6x25
-dim(sea_20) #12x25
-dim(sna_05) #10x25
-dim(sna_10) #15x25
-dim(sna_20) #46x25
-dim(sna_40) #5x25
+dim(est_05) #9x27
+dim(est_10) #66x27
+dim(est_20) #54x27
+dim(est_40) #32x27
+dim(est_60) #14x27
+dim(kal_05) #13x27
+dim(kal_10) #55x27
+dim(kal_20) #48x27
+dim(kal_40) #19x27
+dim(sna_05) #10x27
+dim(sna_10) #15x27
+dim(sna_20) #46x27
+dim(sna_40) #5x27
 
 ################
 #### Part 1 ####
@@ -107,7 +105,7 @@ dim(sna_40) #5x25
 
 #### Combine the separate objects into one, manipulate and filter ####
 # Data set 1 for est, kal & sna 20m only
-coral_ann_eks20 <- rbind(est_20, kal_20, sna_20) #148 x 25; only for est, kal & sna 20m supplement figure
+coral_ann_eks20 <- rbind(est_20, kal_20, sna_20) #148 x 27; only for est, kal & sna 20m supplement figure
 
 # Add labels from metadata
 # Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
@@ -117,9 +115,9 @@ coral_ann_eks20.2 <- merge(coral_ann_eks20, metadata[, c("ID", "Species_mpha")],
 # Update the 'label' column with Species_mpha
 coral_ann_eks20.2$label <- coral_ann_eks20.2$Species_mpha
 
-mad_ann_eks20 <- coral_ann_eks20.2[!coral_ann_eks20.2$label %in% c('PPOR', 'SINT'),] # 138x26 remove corals that aren't Madracis
+mad_ann_eks20 <- coral_ann_eks20.2[!coral_ann_eks20.2$label %in% c('PPOR', 'SINT'),] # 138x28 remove corals that aren't Madracis
 
-mad_ann_seq_eks20 <- mad_ann_eks20[mad_ann_eks20$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 123x26
+mad_ann_seq_eks20 <- mad_ann_eks20[mad_ann_eks20$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 123x28
 
 # Make sure any clones are removed
 Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
@@ -128,14 +126,14 @@ Madracis606_names <- paste(Madracis606_split$V4, Madracis606_split$V5, sep = "_"
 
 mad_ann_seq_eks20$id %in% Madracis606_names # identify potential clones and carefully check 06a_merge_sample_bams.sh to see if one or both are in annotation dataset. If 2, remove 1.
 
-mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% Madracis606_names,]$id # potential clones. Clone pair can be seen in 06a_merge_sample_bams.sh
-mad_ann_seq_eks20[mad_ann_seq_eks20$id %in% Madracis606_names,]$id
+mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% Madracis606_names,]$id # potential clones. If clone pair exists, can be seen in 06a_merge_sample_bams.sh. These IDs are not in the 606 uniques list for which clones have been removed. It is possible that only one in a clone pair has a good annotation.
+mad_ann_seq_eks20[mad_ann_seq_eks20$id %in% Madracis606_names,]$id # These IDs are in the 606 uniques list, so they might have a clone(s) not in this list that's already been removed. IDs in this list are not clones with others in the list.
 
-clones <- c('JH_0089', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0381', 'JH_0387', 'JH_0475', 'JH_0483', 'JH_0694', 'JH_0696') # clones in est, kal & sna all depths
+clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0463', 'JH_0475', 'JH_0476', 'JH_0483', 'JH_0694', 'JH_0696') # clones in est, kal & sna all depths, so some not applicable to 20m, JH_0089, JH_0381 & JH_0387 are from 10m
 
-mad_ann_seq_eks20.2 <- mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% clones, ] # remove the clones
+mad_ann_seq_eks20.2 <- mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% clones, ] # remove the clones; 114 x 28
 
-mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 110 x 26 for est, kal & sna 20m only
+mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 108 x 28 for est, kal & sna 20m only
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_eks20_core[which(mad_ann_seq_eks20_core$label == 'UNKN'),1]
@@ -237,7 +235,7 @@ dev.off()
 ################
 #### Aggregate data across sites by depth, with an option for ANOVA ####
 # Data set 2 for est, kal & sna all depths
-coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_10, sna_20, sna_40) #376 x 25
+coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_20, kal_40, sna_05, sna_10, sna_20, sna_40) #386 x 27
 
 # Add labels from metadata
 # Merge metadata$Species_mpha into coral_ann by matching 'id' to 'ID'
@@ -247,9 +245,9 @@ coral_ann2 <- merge(coral_ann, metadata[, c("ID", "Species_mpha")],
 # Update the 'label' column with Species_mpha
 coral_ann2$label <- coral_ann2$Species_mpha
 
-mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #363x26 remove corals that aren't Madracis, change input data set depending on elevation range
+mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #373x28 remove corals that aren't Madracis, change input data set depending on elevation range
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 308x26
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 318x28
 
 # Make sure any clones are removed
 Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
@@ -261,11 +259,11 @@ mad_ann_seq$id %in% Madracis606_names # identify potential clones and carefully 
 mad_ann_seq[!mad_ann_seq$id %in% Madracis606_names,]$id # potential clones. Clone pair can be seen in 06a_merge_sample_bams.sh
 mad_ann_seq[mad_ann_seq$id %in% Madracis606_names,]$id
 
-clones <- c('JH_0089', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0381', 'JH_0387', 'JH_0475', 'JH_0483', 'JH_0694', 'JH_0696') # clones in est, kal & sna all depths
+clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0463', 'JH_0475', 'JH_0476', 'JH_0483', 'JH_0694', 'JH_0696') # clones in est, kal & sna all depths, so some not applicable to 20m, JH_0089, JH_0381 & JH_0387 are from 10m
 
-mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones
+mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones; 306x28
 
-mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 292x26
+mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 230x28
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -274,9 +272,9 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 # Change depth categories into integers
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
-# Reduce to only MDEC, MPHA1, MPHA2 & MSEN 
-mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN.ln1'),] # 286 x 26
-mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,190),] # remove MSEN from 5 (row 180) and 40m (row 190) #284 x 26
+# Reduce to only MDEC, MPHA1, MPHA2 & MSEN when n = 2+
+mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN.ln1'),] # 294 x 28
+mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,274,190),] # remove MSEN from 2x5m (row 180, 274) and 1x40m (row 190) #291 x 28
 
 # Plotting function for multiple y variables
 plot_boxplot_anova_multi_pub <- function(df, y_vars) {

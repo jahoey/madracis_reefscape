@@ -2,9 +2,9 @@ library(dplyr)
 library(here)
 
 # Read in Madracis master datasheet
-mad_master <- read.csv(here("madracis_master_merged_Oct2024.csv"), header = TRUE)
+mad_master <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
-quant_files <- list.files(here("3D_models/output/hab_measures"), pattern = "\\.csv$", full.names = TRUE)
+quant_files <- list.files(here("3D_models/output/hab_measures_03062026/"), pattern = "\\.csv$", full.names = TRUE)
 
 # Loop through each smaller file
 for (quant_file in quant_files) {
@@ -21,7 +21,7 @@ for (quant_file in quant_files) {
   output_filename <- paste0(tools::file_path_sans_ext(basename(quant_file)), "_quality.csv")
   
   # Construct the full path to the output file
-  output_file_path <- file.path(here("3D_models/output/hab_measures", output_filename))
+  output_file_path <- file.path(here("3D_models/output/hab_measures_03062026/", output_filename))
     
   # Write high quality annotations to a new CSV
   write.csv(merged.yes, row.names = FALSE, file = output_file_path)

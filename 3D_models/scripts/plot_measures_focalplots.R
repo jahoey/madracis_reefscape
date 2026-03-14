@@ -50,7 +50,7 @@ metadata <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
-directory <- here("3D_models/output/hab_measures_03062026/")
+directory <- here("3D_models/output/hab_measures_03132026/")
 
 # List all CSV files with the pattern *_measurements.csv; modify depending on desired radius
 csv_files <- list.files(path = directory, pattern = "measurements_quality.csv", full.names = TRUE)
@@ -112,12 +112,12 @@ coral_ann_eks20 <- rbind(est_20, kal_20, sna_20) #148 x 27; only for est, kal & 
 coral_ann_eks20.2 <- merge(coral_ann_eks20, metadata[, c("ID", "Species_mpha")],
                     by.x = "id", by.y = "ID", all.x = TRUE)
 
-# Update the 'label' column with Species_mpha
+# Update the 'label' column with Species_mpha, if it is not already up-to-date
 coral_ann_eks20.2$label <- coral_ann_eks20.2$Species_mpha
 
-mad_ann_eks20 <- coral_ann_eks20.2[!coral_ann_eks20.2$label %in% c('PPOR', 'SINT'),] # 138x28 remove corals that aren't Madracis
+mad_ann_eks20 <- coral_ann_eks20[!coral_ann_eks20$label %in% c('PPOR', 'SINT'),] # 138x27 remove corals that aren't Madracis
 
-mad_ann_seq_eks20 <- mad_ann_eks20[mad_ann_eks20$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 123x28
+mad_ann_seq_eks20 <- mad_ann_eks20[mad_ann_eks20$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 123x27
 
 # Make sure any clones are removed
 Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
@@ -131,9 +131,9 @@ mad_ann_seq_eks20[mad_ann_seq_eks20$id %in% Madracis606_names,]$id # These IDs a
 
 clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'JH_0463', 'JH_0475', 'JH_0476', 'JH_0483', 'JH_0694', 'JH_0696') # clones in est, kal & sna all depths, so some not applicable to 20m, JH_0089, JH_0381 & JH_0387 are from 10m
 
-mad_ann_seq_eks20.2 <- mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% clones, ] # remove the clones; 114 x 28
+mad_ann_seq_eks20.2 <- mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% clones, ] # remove the clones; 114 x 27
 
-mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 108 x 28 for est, kal & sna 20m only
+mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 108 x 27 for est, kal & sna 20m only
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_eks20_core[which(mad_ann_seq_eks20_core$label == 'UNKN'),1]
@@ -242,7 +242,7 @@ coral_ann <- rbind(est_05, est_10, est_20, est_40, est_60, kal_05, kal_10, kal_2
 coral_ann2 <- merge(coral_ann, metadata[, c("ID", "Species_mpha")],
                     by.x = "id", by.y = "ID", all.x = TRUE)
 
-# Update the 'label' column with Species_mpha
+# Update the 'label' column with Species_mpha, if it is not already populated
 coral_ann2$label <- coral_ann2$Species_mpha
 
 mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #373x28 remove corals that aren't Madracis, change input data set depending on elevation range

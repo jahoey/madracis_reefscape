@@ -247,7 +247,7 @@ coral_ann2$label <- coral_ann2$Species_mpha
 
 mad_ann <- coral_ann2[!coral_ann2$label %in% c('PPOR', 'SINT'),] #373x28 remove corals that aren't Madracis, change input data set depending on elevation range
 
-mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 318x28
+mad_ann_seq <- mad_ann[mad_ann$id %in% (metadata[which(metadata$Davis_library == TRUE),5]),] # work with only genotyped Madracis, 318x28; numbers in Table 1 'habitat measurements'
 
 # Make sure any clones are removed
 Madracis606 <- read.csv(here("WGS/angsd_results/bam_lists/madracis606_names.csv"), header = FALSE) # list of unique ids (no clones)
@@ -263,7 +263,7 @@ clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'J
 
 mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones; 306x28
 
-mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 230x28
+mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 300x28
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -272,9 +272,10 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 # Change depth categories into integers
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
-# Reduce to only MDEC, MPHA1, MPHA2 & MSEN when n = 2+
+# Reduce to when total species n >3; only MDEC, MPHA1, MPHA2 & MSEN1 meet this threshold
 mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN.ln1'),] # 294 x 28
-mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,274,190),] # remove MSEN from 2x5m (row 180, 274) and 1x40m (row 190) #291 x 28
+# And when split by species and depth, n > 2; so remove 2 MSEN1 from 5m and 1 from 40m
+mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,274,190),] # remove MSEN1 from 2x5m (row 180, 274) and 1x40m (row 190) #291 x 28
 
 # Plotting function for multiple y variables
 plot_boxplot_anova_multi_pub <- function(df, y_vars) {

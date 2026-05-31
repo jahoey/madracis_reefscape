@@ -1,0 +1,103 @@
+id,site,depth,label,gap_fill_fix,note1,note2
+JH_0014,sna,20,SINT,,,Not in analysis
+JH_0016,sna,20,SINT,,,Not in analysis
+JH_0019,sna,20,SINT,,,Not in analysis
+JH_0042,sna,20,MDEC,,medium,Under transect tape
+JH_0043,sna,20,MSEN.ln1,,medium,Under transect tape
+JH_0047,sna,20,SINT,,,Not in analysis
+JH_0047,sna,20,SINT,,minor,Not in analysis
+JH_0048,sna,20,SINT,,,Not in analysis
+JH_0710,sna,20,MDEC,,large,Center left
+JH_0050,sna,20,MPHA.ln1,,large,Tough. Both sides of trasect tape
+JH_0584,sna,20,MSEN.ln1,,,Not in analysis
+JH_0587,sna,20,MPHA.ln2,,large,Left side of transect tape
+JH_0696,sna,20,MPHA.ln1,,,Not in analysis
+JH_0697,sna,20,MSEN.ln1,,medium,Left side
+JH_0698,sna,20,MPHA.ln1,,large,Both sides of tape need to be fixed
+JH_0699,sna,20,MPHA.ln2,,minor,Under transect tape
+JH_0701,sna,20,MPHA.ln1,,,Not in analysis
+JH_0054,sna,10,MPHA.ln1,,,Not in analysis
+JH_0057,sna,10,MPHA.ln1,,,Not in analysis
+JH_0059,sna,10,MPHA.ln1,,,Not in analysis
+JH_0592 ,sna,5,MPHA.ln1,,medium,Under transect tape
+JH_0595 ,sna,5,MPHA.ln1,,,Not in analysis
+JH_0603,sna,5,MDEC,,large,Ask Pim about alignment; probably top center
+JH_0716,sna,5,MPHA.ln1,,,Not in analysis
+JH_0111,kal,40,MPHA.ln2,,large,Top left
+JH_0112,kal,40,MPHA,,,Not in analysis
+JH_0113 ,kal,40,MPHA.ln2,,medium,Right of center bit
+JH_0147 ,kal,40,SINT,,,Not in analysis
+JH_0118 ,kal,20,MPHA.ln1,,medium,Bottom center
+JH_0139,kal,20,MPHA.ln2,,medium,Bottom left
+JH_0168,kal,20,MPHA.ln2,,large,Left side
+JH_0171,kal,20,MPHA,,,Not in analysis
+JH_0194,kal,20,MPHA,,,Not in analysis
+JH_0195 ,kal,20,MPHA.ln1,,,Not in analysis
+JH_0200,kal,20,MPHA.ln2,,medium,Top left
+JH_0204,kal,20,MSEN.ln1,,large,Bottom left
+JH_0217 ,kal,20,UNKN,,,Not in analysis
+JH_0218 ,kal,20,MDEC,,,Not in analysis
+JH_0220,kal,20,MPHA.ln2,,,Not in analysis
+JH_0221,kal,20,MPHA.ln1,,,Not in analysis
+JH_0228,kal,20,MPHA.ln1,,,Not in analysis
+JH_0229,kal,20,MPHA.ln1,,large,Fill needs to be completely flipped; center and right
+JH_0234,kal,20,MDEC,,large,Entire left side
+JH_0541,kal,20,MPHA,,,Not in analysis
+JH_0079,kal,10,MPHA.ln1,,large,Left side
+JH_0091,kal,10,MPHA,,,Not in analysis
+JH_0098,kal,10,MPHA.ln1,,large,Both sides of tape need to be fixed
+JH_0100 ,kal,10,MPHA,,,Not in analysis
+JH_0125 ,kal,10,MSEN.ln1,,,Not in analysis
+JH_0134,kal,10,MSEN.ln1,,medium,Top left
+JH_0136,kal,10,MCAR,,large,Right side too
+JH_0143,kal,10,MCAR,,,Not in analysis
+JH_0181,kal,10,MPHA,,,Not in analysis
+JH_0182 ,kal,10,MPHA.ln1,,large,Both sides of tape need to be fixed
+JH_0184 ,kal,10,MCAR,,,Not in analysis
+JH_0549,kal,10,MDEC,,medium,Top left
+JH_0556,kal,10,MPHA.ln1,,large,center bit and bottom center
+JH_0560 ,kal,5,MDEC,,,Not in analysis
+JH_0566 ,kal,5,MDEC,,large,Top half
+JH_0576 ,kal,5,MDEC,,medium,center right but not bottom
+JH_0297 ,est,60,MPHA,,,Not in analysis
+JH_0436,est,40,MPHA,,,Not in analysis
+JH_0446,est,40,MPHA.ln2,,large,Left side
+JH_0448,est,40,MPHA.ln2,,medium,Just below center
+JH_0449,est,40,MPHA,,,Left side but not in analysis
+JH_0458,est,40,MPHA.ln2,,medium,Under transect tape
+JH_0459,est,40,MPHA,,medium,Under transect tape
+JH_0308,est,20,MPHA.ln2,,medium,Top left
+JH_0340,est,20,MPHA.ln2,,vminor,Under transect tape
+JH_0341,est,20,MPHA,,,Not in analysis
+JH_0342,est,20,MPHA.ln1,,minor,Under transect tape
+JH_0354,est,20,MPHA.ln1,,,Not in analysis
+JH_0493,est,20,MPHA,,,Not in analysis
+JH_0494 ,est,20,MPHA.ln2,,minor,Under transect tape
+JH_0267,est,10,MPHA.ln1,,,Not in analysis
+JH_0270,est,10,MPHA.ln1,,,Not in analysis
+JH_0277,est,10,MPHA.ln1,,medium,Bottom left
+JH_0282,est,10,MPHA.ln1,,,Not in analysis
+JH_0283,est,10,MSEN.ln1,,large,Entire center
+JH_0284,est,10,MPHA.ln1,,medium/large,Top left
+JH_0285,est,10,MSEN.ln1,,large,Entire left half
+JH_0309,est,10,MDEC,,vminor,Under transect tape
+JH_0323,est,10,MDEC,,,Not in analysis
+JH_0325,est,10,UNKN,,,Not in analysis
+JH_0328,est,10,MDEC,,large,Entire bottom; left heart should be red
+JH_0329,est,10,MDEC,,small,Center bottom should be blue
+JH_0367,est,10,MDEC,,,Not in analysis
+JH_0369,est,10,MPHA.ln1,,medium,Bottom center at least
+JH_0377,est,10,MPHA.ln1,,vminor,Under transect tape
+JH_0382,est,10,MSEN.ln1,,,Not in analysis
+JH_0383,est,10,MSEN.ln1,,,Not in analysis
+JH_0385,est,10,MSEN.ln1,,large,center
+JH_0386,est,10,MDEC,,minor,Under transect tape
+JH_0388,est,10,MPHA.ln1,,,Not in analysis
+JH_0426,est,10,MSEN.ln1,,,Not in analysis
+JH_0500,est,10,MPHA.ln1,,,Not in analysis
+JH_0501,est,10,MPHA,,,Not in analysis
+JH_0504,est,10,MPHA,,,Not in analysis
+JH_0513,est,10,MDEC,,large,Both sides of tape need to be fixed
+JH_0514,est,10,MSEN.ln1,,,Not in analysis
+JH_0413,est,5,MPHA.ln1,,large,All of it
+JH_0423,est,5,MDEC,,large,Entire right side; left side should be red

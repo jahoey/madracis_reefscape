@@ -50,7 +50,7 @@ metadata <- read.csv(here("madracis_master_merged_Oct2025.csv"), header = TRUE)
 
 #### Read in all habitat measurements & name according to their filename ####
 # Set the directory containing the CSV files
-directory <- here("3D_models/output/hab_measures_03132026/")
+directory <- here("3D_models/output_for_R/hab_measures_03132026/")
 
 # List all CSV files with the pattern *_measurements.csv; modify depending on desired radius
 csv_files <- list.files(path = directory, pattern = "measurements_quality.csv", full.names = TRUE)
@@ -194,7 +194,9 @@ plot_boxplot_facet_anova <- function(df, y_vars) {
   ggplot(df_long, aes(x = label, y = value, fill = label)) +
     geom_boxplot(alpha = 1, outlier.shape = NA) +
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
-    facet_grid(measure ~ site, scales = "free_y", switch = "y") +  # Removed depth facetting
+    facet_grid(measure ~ site, scales = "free_y", switch = "y",
+               labeller = labeller(
+                 measure = c(gap_fill_new = "gap fraction", elevation = "elevation", vector_disp = "vector dispersion"))) +  # Removed depth facetting
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.15, label = Letters),  # Lowered letters
               inherit.aes = FALSE, color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
@@ -342,7 +344,9 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
   ggplot(df_long, aes(x = label, y = y_value, fill = label)) +
     geom_boxplot(alpha = 1, outlier.shape = NA) +
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
-    facet_grid(variable ~ depth, scales = "free", space = "free_x", switch = "y") +
+    facet_grid(variable ~ depth, scales = "free", space = "free_x", switch = "y", 
+               labeller = labeller(
+      variable = c(gap_fill_new = "gap\nfraction", elevation = "elevation", vector_disp = "vector\ndispersion"))) +
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.05, label = Letters),
               color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
@@ -379,5 +383,65 @@ par(
 )
 
 plot_boxplot_anova_multi_pub(mad_ann_seq_core_reduced2, c("vector_disp", "gapF_fill", "elevation"))
+
+dev.off()
+
+################
+#### Part 3 ####
+################
+#### Figure out which samples need manual manipulation for gap fraction due to transect tape, etc. Flood fill default seed points are in the center of the image and then halfway to the left ####
+# All gap_fill visualizations have been inspected and the flood fill algorithm is not interpreting the transect tape correctly for some. Run Part 2 to filter measurements down to the core samples: mad_ann_seq_core. Manually rerun gap_fill for these samples. Use this adjusted gap_fill value for these samples and rerun plotting code.
+candidates <- read.csv(here("3D_models/output/hab_measures_gapfill_followup/gap_fill_fix_candidates.csv"), header = TRUE)
+
+gap_fill_redo_list <- candidates[which(candidates$id %in% mad_ann_seq_core$id),]
+
+write.csv(gap_fill_redo_list, "~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/3D_models/output/hab_measures_gapfill_followup/gap_fill_redo_list.csv", row.names = FALSE)
+
+################
+#### Part 4 ####
+################
+#### Proceed to this step once gap_fill has been manually redone using substrata. Using the two main datasets in Part 1 and 2, merge the original habitat measurements with the ones that got redone. Save the new file for plotting ####
+gap_fill_redos <- read.csv(here("3D_models/output_for_R/hab_measures_gapfill_followup/gap_fill_redo_list_complete.csv"), header = TRUE)
+
+#### For the main dataset using all sites and depths ####
+mad_ann_seq_core_reduced2_gfixed <- merge(mad_ann_seq_core_reduced2, gap_fill_redos[, c("id", "gap_fill_fix")], by = "id", all.x = TRUE)
+
+# Create new column
+mad_ann_seq_core_reduced2_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_core_reduced2_gfixed$gap_fill_fix), mad_ann_seq_core_reduced2_gfixed$gapF_fill, mad_ann_seq_core_reduced2_gfixed$gap_fill_fix)
+
+#### For the 20m only dataset ####
+mad_ann_seq_eks20_core_gfixed <- merge(mad_ann_seq_eks20_core, gap_fill_redos[, c("id", "gap_fill_fix")], by = "id", all.x = TRUE)
+
+# Create new column
+mad_ann_seq_eks20_core_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_eks20_core_gfixed$gap_fill_fix), mad_ann_seq_eks20_core_gfixed$gapF_fill, mad_ann_seq_eks20_core_gfixed$gap_fill_fix)
+
+#### Rerun the plotting code for 1) all depths and 2) 20 m only ####
+# Updated 20m plot with fixed gapfill measurements
+png(file=here("3D_models/figures/VD_GF_SA180_rad0.2_facet_anova_20m_gapfill_redo.png"), width=8, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_facet_anova(mad_ann_seq_eks20_core_gfixed, y_vars = c("gap_fill_new", "elevation", "vector_disp"))
+
+dev.off()
+
+# Updated plot across all depths with fixed gapfill measurements
+png(file=here("3D_models/figures/VD_GF_SA180_bydepth_eks_anova_simple_gapfill_redo.png"), width=10, height=8, res=300, units="in")
+
+par(
+  mar=c(4, 5, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=14 # point size, which is the font size
+)
+
+plot_boxplot_anova_multi_pub(mad_ann_seq_core_reduced2_gfixed, c("vector_disp", "gap_fill_new", "elevation"))
 
 dev.off()

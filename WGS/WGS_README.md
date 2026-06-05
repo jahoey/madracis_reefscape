@@ -6,9 +6,11 @@ This directory contains steps for handling raw WGS data and analyses for 672 *Ma
   * `/madracis606`: subsequent output after all sample, technical, putative clones, and SINT were removed
   * `/madracis672`: initial output when all 672 libraries were included
 
-`/scripts`: scripts for bioinformatics and genomic analyses
+`/figures`: output figures summarizing the genomic data
 
 `/metadata`: associated metadata needed to rename files
+
+`/scripts`: scripts for bioinformatics and genomic analyses
 
 # Overview
 

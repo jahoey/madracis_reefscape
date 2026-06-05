@@ -12,3 +12,5 @@ This directory contains data for colonies annotated in 3D photogrammetry models 
   * `plot_measures_focalplots.R`: plots the quality-filtered measures output for est, kal, and sna according to site, depth, and species & runs ANOVAs
   
 `/visualizations`: colony-level visualizations for gapF_fill, elevation, roughness, and vector dispersion
+
+![Madracis gapF_fill example](https://github.com/jahoey/madracis_reefscape/blob/main/assets/gapF_fill_example.png)

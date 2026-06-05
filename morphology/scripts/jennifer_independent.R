@@ -688,6 +688,25 @@ text( c(1:6) , c$stats[nrow(c$stats),]+over , LABELS3[,1]  , col= 'black' )
 
 dev.off()
 
+## Calculate summary stats for a table
+summary_stats <- function(x) {
+  c(
+    Mean   = mean(x, na.rm = TRUE),
+    Median = median(x, na.rm = TRUE),
+    Min    = min(x, na.rm = TRUE),
+    Max    = max(x, na.rm = TRUE)
+  )
+}
+
+# IC distance
+aggregate(Mean_IC ~ Species_mpha, data = ic.dist.trimmed.white.quality, FUN = summary_stats)
+
+# Septa
+aggregate(Mean_Septa ~ Species_mpha, data = septa.trimmed, FUN = summary_stats)
+
+
+
+
 
 
 #### Measurements broken out by depth, regardless of scale used (both yellow & white) ####

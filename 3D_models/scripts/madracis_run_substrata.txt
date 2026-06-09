@@ -1,0 +1,123 @@
+# Substrata analyses for Madracis spp.
+## Load substrata
+%load_ext autoreload
+%autoreload 2
+from substrata import *
+import os
+project_root = r"C:\Users\deepcat\projects\substrata_notebooks\jennifer"
+
+## Define paths, plots, and substrata functions
+### Defining paths and plot ids
+### Note that Annotations files need to have a header: id,x,y,z,label,species
+annotations_path = os.path.join(project_root, "annotations/")
+microhabitat_output_path = os.path.join(project_root, "microhabitat/output/")
+microhabitat_vis_path = os.path.join(project_root, "microhabitat/visualizations/")
+plot_vis_path = os.path.join(project_root, "plot_visualizations/")
+plot_paths = {
+    'cur_sna_05m_20200303': 'Y:/focal_plots/cur_sna/cur_sna_05m/cur_sna_05m_20200303/',
+    'cur_sna_10m_20200303': 'Y:/focal_plots/cur_sna/cur_sna_10m/cur_sna_10m_20200303/',
+    'cur_sna_20m_20200303': 'Y:/focal_plots/cur_sna/cur_sna_20m/cur_sna_20m_20200303/',
+    'cur_sna_40m_20200216': 'Y:/focal_plots/cur_sna/cur_sna_40m/cur_sna_40m_20200216/',
+    'cur_kal_05m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_05m/cur_kal_05m_20200214/',
+    'cur_kal_10m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_10m/cur_kal_10m_20200214/',
+    'cur_kal_20m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_20m/cur_kal_20m_20200214/',
+    'cur_kal_40m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_40m/cur_kal_40m_20200214/',
+    'cur_est_05m_20200219': 'Y:/focal_plots/cur_est/cur_est_05m/cur_est_05m_20200219/',
+    'cur_est_10m_20200219': 'Y:/focal_plots/cur_est/cur_est_10m/cur_est_10m_20200219/',
+    'cur_est_20m_20200219': 'Y:/focal_plots/cur_est/cur_est_20m/cur_est_20m_20200219/',
+    'cur_est_40m_20200219': 'Y:/focal_plots/cur_est/cur_est_40m/cur_est_40m_20200219/',
+    'cur_est_60m_20200302': 'Y:/focal_plots/cur_est/cur_est_60m/cur_est_60m_20200302/' 
+}
+
+def execute_all_steps(): 
+    for plot_id in plot_paths:
+        plot_path = plot_paths[plot_id]
+        plot_annotations_path = os.path.join(annotations_path, f"{plot_id}_updated_spp.csv")
+        
+        plot = load_plot_and_annotations(plot_id, plot_path, plot_annotations_path)
+        # calc_distance_matrix(plot, output_path)
+        calc_microhabitat_measurements(plot, microhabitat_output_path)
+        
+## Test substrata for one plot
+### Loads plot and annotations. Check to make sure sna_05 and est_40 transformed annotations are on plot
+def load_plot_and_annotations(plot, plot_path, annotations_path):
+    plot = ProjectInitializer(yaml = plot_path + plot + ".yaml")
+    plot.reset_paths_to_local(plot_path)        # not required when running on server
+    plot.annotations_filepath = annotations_path
+    plot.initialize()
+    return plot
+
+## Example execution
+# plot = load_plot_and_annotations('cur_est_40m_20200219',
+#                                  plot_paths['cur_est_40m_20200219'],
+#                                  os.path.join(annotations_path, 'cur_est_40m_20200219_updated_spp.csv'))
+# Visualize annotations
+# plot.annotations.show(plot.pcd, color=True)
+
+## Runs substrata functions on test plot to confirm everything looks good
+def calc_microhabitat_measurements(plot, output_path, trial_run=False):
+    if trial_run:
+        annotations = plot.annotations.subset(5)
+    else:
+        annotations = plot.annotations
+    measurements_output_filepath = os.path.join(output_path, f'{plot.id}_measurements.csv')
+    # Sample point cloud around annotations with 0.2m radius
+    annotations.get_point_cloud_by_radius(plot.pcd, 0.2)
+    # Calculate microhabitat measurements
+    annotations.measure_all(calc_gap_fraction, plot.pcd.simple_pcd)
+    annotations.measure_all(calc_roughness)
+    annotations.measure_all(get_vector_dispersion)
+    annotations.measure_all(get_plane_angles)
+    # Save microhabitat measurements
+    annotations.save(measurements_output_filepath)
+    pdf_path = os.path.join(microhabitat_vis_path,f"{plot.id}_measurements.pdf")
+    visualizations.save_measurement_visualizations_to_pdf(annotations, pdf_path)
+
+## Example execution
+# calc_microhabitat_measurements(plot, microhabitat_output_path, trial_run=True)
+
+## Calculate habitat measurements for all plots
+execute_all_steps()
+
+# Rerunning substrata for colonies that had gap fill issues
+## Defining paths and plot ids
+### Note that Annotations files need to have a header: id,x,y,z,label,species
+annotations_path = os.path.join(project_root, "annotations/")
+microhabitat_output_path = os.path.join(project_root, "microhabitat/output/")
+microhabitat_vis_path = os.path.join(project_root, "microhabitat/visualizations/")
+plot_vis_path = os.path.join(project_root, "plot_visualizations/")
+plot_paths = {
+#    'cur_sna_05m_20200303': 'Y:/focal_plots/cur_sna/cur_sna_05m/cur_sna_05m_20200303/',
+    'cur_sna_20m_20200303': 'Y:/focal_plots/cur_sna/cur_sna_20m/cur_sna_20m_20200303/',
+#    'cur_kal_10m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_10m/cur_kal_10m_20200214/',
+#    'cur_kal_20m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_20m/cur_kal_20m_20200214/',
+#    'cur_kal_40m_20200214': 'Y:/focal_plots/cur_kal/cur_kal_40m/cur_kal_40m_20200214/',
+#    'cur_est_05m_20200219': 'Y:/focal_plots/cur_est/cur_est_05m/cur_est_05m_20200219/',
+#    'cur_est_10m_20200219': 'Y:/focal_plots/cur_est/cur_est_10m/cur_est_10m_20200219/',
+#    'cur_est_20m_20200219': 'Y:/focal_plots/cur_est/cur_est_20m/cur_est_20m_20200219/',
+#    'cur_est_40m_20200219': 'Y:/focal_plots/cur_est/cur_est_40m/cur_est_40m_20200219/'
+}
+
+def load_plot_and_annotations(plot_path, annotations_path):
+    plot = ProjectInitializer(path = plot_path)
+    plot.reset_paths_to_local(plot_path)        # not required when running on server
+    plot.annotations_filepath = annotations_path
+    plot.initialize()
+    return plot
+
+## Example execution
+plot = load_plot_and_annotations(plot_paths['cur_sna_20m_20200303'],
+                                 os.path.join(annotations_path, 'cur_sna_20m_20200303_gapfill_redo.csv'))
+## Visualize annotations
+plot.annotations.show(plot.pcd, color=True)
+
+## define the annotation for which gap_fraction needs to be redone
+annotation = plot.annotations['JH_0697']
+
+## calculate gap_fraction, both seed_point coords are right in the middle [(0.5, 0.5), (0.5, 0.5)]
+gapF_raw, gapF_fill, gapF_image = calc_gap_fraction(annotation, plot.pcd.simple_pcd, seed_points=[(0.1, 0.5), (0.5, 0.5)])
+
+## visualize
+print(gapF_raw, gapF_fill)
+plt.imshow(gapF_image)
+plt.show()

@@ -133,7 +133,7 @@ clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'J
 
 mad_ann_seq_eks20.2 <- mad_ann_seq_eks20[!mad_ann_seq_eks20$id %in% clones, ] # remove the clones; 114 x 27
 
-mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 108 x 27 for est, kal & sna 20m only
+mad_ann_seq_eks20_core <- mad_ann_seq_eks20.2[!mad_ann_seq_eks20.2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases (some already removed in filters above), 108 x 27 for est, kal & sna 20m only
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_eks20_core[which(mad_ann_seq_eks20_core$label == 'UNKN'),1]
@@ -265,7 +265,7 @@ clones <- c('JH_0089', 'JH_0381', 'JH_0387', 'JH_0212', 'JH_0221', 'JH_0306', 'J
 
 mad_ann_seq2 <- mad_ann_seq[!mad_ann_seq$id %in% clones, ] # remove the clones; 306x28
 
-mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases for exploration (some already removed in filters above), 300x28
+mad_ann_seq_core <- mad_ann_seq2[!mad_ann_seq2$id %in% c('JH_0306', 'JH_0307', 'JH_0165', 'JH_0233', 'JH_0013', 'JH_0052', 'JH_0586'),] # remove edge cases (some already removed in filters above), 300x28
 
 # See if the unknowns have a more updated ID. Should be empty.
 mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN'),1]
@@ -407,13 +407,16 @@ gap_fill_redos <- read.csv(here("3D_models/output_for_R/hab_measures_gapfill_fol
 mad_ann_seq_core_reduced2_gfixed <- merge(mad_ann_seq_core_reduced2, gap_fill_redos[, c("id", "gap_fill_fix")], by = "id", all.x = TRUE)
 
 # Create new column
-mad_ann_seq_core_reduced2_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_core_reduced2_gfixed$gap_fill_fix), mad_ann_seq_core_reduced2_gfixed$gapF_fill, mad_ann_seq_core_reduced2_gfixed$gap_fill_fix)
+mad_ann_seq_core_reduced2_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_core_reduced2_gfixed$gap_fill_fix), mad_ann_seq_core_reduced2_gfixed$gapF_fill, mad_ann_seq_core_reduced2_gfixed$gap_fill_fix) # 291 x 30
+
+# Remove coral for which gap fraction could noot be manually fixed; 290 x 28
+mad_ann_seq_core_reduced2_gfixed2 <- mad_ann_seq_core_reduced2_gfixed[mad_ann_seq_core_reduced2_gfixed$id != 'JH_0423',] 
 
 #### For the 20m only dataset ####
 mad_ann_seq_eks20_core_gfixed <- merge(mad_ann_seq_eks20_core, gap_fill_redos[, c("id", "gap_fill_fix")], by = "id", all.x = TRUE)
 
 # Create new column
-mad_ann_seq_eks20_core_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_eks20_core_gfixed$gap_fill_fix), mad_ann_seq_eks20_core_gfixed$gapF_fill, mad_ann_seq_eks20_core_gfixed$gap_fill_fix)
+mad_ann_seq_eks20_core_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_eks20_core_gfixed$gap_fill_fix), mad_ann_seq_eks20_core_gfixed$gapF_fill, mad_ann_seq_eks20_core_gfixed$gap_fill_fix) # 108 x 29
 
 #### Rerun the plotting code for 1) all depths and 2) 20 m only ####
 # Updated 20m plot with fixed gapfill measurements
@@ -442,6 +445,6 @@ par(
   ps=14 # point size, which is the font size
 )
 
-plot_boxplot_anova_multi_pub(mad_ann_seq_core_reduced2_gfixed, c("vector_disp", "gap_fill_new", "elevation"))
+plot_boxplot_anova_multi_pub(mad_ann_seq_core_reduced2_gfixed2, c("vector_disp", "gap_fill_new", "elevation"))
 
 dev.off()

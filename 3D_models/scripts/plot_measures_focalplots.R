@@ -142,6 +142,16 @@ metadata[metadata$ID %in% mad_ann_seq_eks20_core[which(mad_ann_seq_eks20_core$la
 # Change depth categories into integers
 mad_ann_seq_eks20_core$depth <- as.integer(mad_ann_seq_eks20_core$depth)
 
+# Clean up lineage/taxon names
+mad_ann_seq_eks20_core <- mad_ann_seq_eks20_core %>% # Remove 'lineage' notation from labels
+  mutate(label = case_when(
+    label == "MPHA.ln1" ~ "MPHA1",
+    label == "MPHA.ln2" ~ "MPHA2",
+    label == "MSEN.ln1" ~ "MSEN1",
+    label == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ label          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
 # Look at means
 aggregate(x=mad_ann_seq_eks20_core$gapF_fill,
           by=list(mad_ann_seq_eks20_core$label,mad_ann_seq_eks20_core$depth, mad_ann_seq_eks20_core$site),
@@ -196,13 +206,14 @@ plot_boxplot_facet_anova <- function(df, y_vars) {
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(measure ~ site, scales = "free_y", switch = "y",
                labeller = labeller(
-                 measure = c(gap_fill_new = "gap fraction", elevation = "elevation", vector_disp = "vector dispersion"))) +  # Removed depth facetting
+                 measure = c(gap_fill_new = "habitat\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +  # Removed depth facetting
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.15, label = Letters),  # Lowered letters
               inherit.aes = FALSE, color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
     theme_minimal() +
-    labs(y = NULL, x = "Genetic lineage", fill = 'lineage') +
+    labs(y = NULL, x = "Genetic taxon", fill = 'lineage') +
     theme(
+      text = element_text(family = "Helvetica"),
       axis.text.x = element_text(angle = 45, hjust = 1),
       axis.title.y = element_text(margin = margin(r = 10)), # space for y-axis title
       panel.grid = element_blank(),
@@ -274,8 +285,18 @@ metadata[metadata$ID %in% mad_ann_seq_core[which(mad_ann_seq_core$label == 'UNKN
 # Change depth categories into integers
 mad_ann_seq_core$depth <- as.integer(mad_ann_seq_core$depth)
 
+# Clean up lineage/taxon names
+mad_ann_seq_core <- mad_ann_seq_core %>% # Remove 'lineage' notation from labels
+  mutate(label = case_when(
+    label == "MPHA.ln1" ~ "MPHA1",
+    label == "MPHA.ln2" ~ "MPHA2",
+    label == "MSEN.ln1" ~ "MSEN1",
+    label == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ label          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
 # Reduce to when total species n >3; only MDEC, MPHA1, MPHA2 & MSEN1 meet this threshold
-mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA.ln1', 'MPHA.ln2', 'MSEN.ln1'),] # 294 x 28
+mad_ann_seq_core_reduced <- mad_ann_seq_core[mad_ann_seq_core$label %in% c('MDEC', 'MPHA1', 'MPHA2', 'MSEN1'),] # 294 x 28
 # And when split by species and depth, n > 2; so remove 2 MSEN1 from 5m and 1 from 40m
 mad_ann_seq_core_reduced2 <- mad_ann_seq_core_reduced[-c(180,274,190),] # remove MSEN1 from 2x5m (row 180, 274) and 1x40m (row 190) #291 x 28
 
@@ -346,13 +367,14 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(variable ~ depth, scales = "free", space = "free_x", switch = "y", 
                labeller = labeller(
-      variable = c(gap_fill_new = "gap\nfraction", elevation = "elevation", vector_disp = "vector\ndispersion"))) +
+      variable = c(gap_fill_new = "habitat\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.05, label = Letters),
               color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
     theme_minimal() +
-    labs(y = NULL, x = "Genetic lineage", fill = 'lineage') + 
+    labs(y = NULL, x = "Genetic taxon", fill = 'lineage') + 
     theme(
+      text = element_text(family = "Helvetica"),
       axis.text.x = element_text(angle = 45, hjust = 1, size = 12), # tick labels
       axis.text.y = element_text(size = 12),
       panel.grid = element_blank(),
@@ -402,6 +424,14 @@ write.csv(gap_fill_redo_list, "~/Documents/CalAcademy_postdoc/Analyses/madracis_
 ################
 #### Proceed to this step once gap_fill has been manually redone using substrata. Using the two main datasets in Part 1 and 2, merge the original habitat measurements with the ones that got redone. Save the new file for plotting ####
 gap_fill_redos <- read.csv(here("3D_models/output_for_R/hab_measures_gapfill_followup/gap_fill_redo_list_complete.csv"), header = TRUE)
+
+gap_fill_redos <- gap_fill_redos %>% # Remove 'lineage' notation from labels
+  mutate(label = case_when(
+    label == "MPHA.ln1" ~ "MPHA1",
+    label == "MPHA.ln2" ~ "MPHA2",
+    label == "MSEN.ln1" ~ "MSEN1",
+    TRUE ~ label          # TRUE acts as a fallback to keep other values unchanged
+  ))
 
 #### For the main dataset using all sites and depths ####
 mad_ann_seq_core_reduced2_gfixed <- merge(mad_ann_seq_core_reduced2, gap_fill_redos[, c("id", "gap_fill_fix")], by = "id", all.x = TRUE)

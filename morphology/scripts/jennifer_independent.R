@@ -613,7 +613,7 @@ par(
 # Basic boxplot for septa count
 d <- boxplot(septa.trimmed$Mean_Septa ~ septa.trimmed$Species_mpha, col = colors_mpha, ylim = c(5,12.5), xlab = '', ylab = '', outline = FALSE, main = 'Septa (n = 490)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
-mtext("Genetic lineage", side = 1, line = 4)
+mtext("Genetic taxon", side = 1, line = 4)
 axis(2, las = 2)
 mtext("Average Septa Count", side = 2, line = 3)
 
@@ -621,7 +621,7 @@ text(x = 1:7,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.4,
      ## Use names from the data list.
-     labels = c("MCAR", "MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2","UNKN"),
+     labels = c("MCAR", "MDEC","MPHA1","MPHA2","MSEN1", "MSEN2","UNKN"),
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -651,7 +651,7 @@ text( c(1:7) , d$stats[nrow(d$stats),]+over , LABELS4[,1]  , col= 'black' )
 # Basic boxplot for quailty white squares
 c <- boxplot(ic.dist.trimmed.white.quality$Mean_IC ~ ic.dist.trimmed.white.quality$Species_mpha, col = colors_mpha, xlab = '', ylab = '', ylim = c(0.75, 2.8), outline = FALSE, main = 'Inter-columella  Distance (n = 252)', xaxt = 'n', yaxt = 'n')
 axis(1, labels = FALSE)
-mtext("Genetic lineage", side = 1, line = 4)
+mtext("Genetic taxon", side = 1, line = 4)
 axis(2, las = 2)
 mtext("Average Inter-columella  Distance (mm)", side = 2, line = 3)
 
@@ -659,7 +659,7 @@ text(x = 1:6,
      ## Move labels to just below bottom of chart.
      y = par("usr")[3] - 0.1,
      ## Use names from the data list.
-     labels = c("MCAR","MDEC","MPHA.ln1","MPHA.ln2","MSEN.ln1", "MSEN.ln2"), #"MPHA"
+     labels = c("MCAR","MDEC","MPHA1","MPHA2","MSEN1", "MSEN2"), #"MPHA"
      ## Change the clipping region.
      xpd = NA,
      ## Rotate the labels by 35 degrees.
@@ -692,6 +692,7 @@ dev.off()
 summary_stats <- function(x) {
   c(
     Mean   = mean(x, na.rm = TRUE),
+    SD     = sd(x, na.rm = TRUE),
     Median = median(x, na.rm = TRUE),
     Min    = min(x, na.rm = TRUE),
     Max    = max(x, na.rm = TRUE)

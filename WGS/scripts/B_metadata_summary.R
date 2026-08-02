@@ -2,6 +2,7 @@ library(here)
 library(stringr)
 library(scales)
 library(RColorBrewer)
+library(dplyr)
 
 ids <- read.csv(here("WGS/angsd_results/bam_lists/ids_recoded606_Oct2025.csv"), header = TRUE) # 606 Madracis, no clones
 
@@ -30,7 +31,17 @@ metadata[which(metadata$id_original == 'PB_4577'),9] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4576'),9] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4579'),9] <- 'MSEN.ln2'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) #reorder the species factors
+metadata <- metadata %>% # Remove 'lineage' notation from labels
+  mutate(species_mpha = case_when(
+    species_mpha == "MPHA.ln1" ~ "MPHA1",
+    species_mpha == "MPHA.ln2" ~ "MPHA2",
+    species_mpha == "MPHA.ln3" ~ "MPHA3",
+    species_mpha == "MSEN.ln1" ~ "MSEN1",
+    species_mpha == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ species_mpha          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'UNKN')) #reorder the species factors
 
 #### Set color scheme ####
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2
@@ -138,10 +149,10 @@ for (j in 1:ncol(speciesbydepth)) {
 # Add x-axis labels and axis title for the combined plot
 text(x = c(0.7, 1.9, 3.1, 4.3, 5.5, 6.7, 7.9, 9.1, 10.3, 11.5),
      y = par("usr")[3] - 10,
-     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA.ln1","MPHA.ln2", "MPHA.ln3","MSEN.ln1", "MSEN.ln2", "UNKN"),
+     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA1","MPHA2", "MPHA3","MSEN1", "MSEN2", "UNKN"),
      xpd = NA, srt = 35, adj = 0.965)
 
-mtext('Genetic lineage', side = 1, line = 5.75)
+mtext('Genetic taxon', side = 1, line = 5.75)
 
 dev.off()
 
@@ -172,6 +183,28 @@ par(
 
 for (j in 1:nrow(depthbyspecies)) {
   barplot(height=as.matrix(depthbyspecies[j,]), names=colnames(depthbyspecies), xlab = 'Depth', ylab = 'Proportion', main = paste(rownames(depthbyspecies)[j], ' (n = ', rowSums(speciesbydepth)[j], ')', sep = ''), col = colors_mpha[j], ylim = c(0,1), las = 1, cex.main = 1.5)
+}
+
+dev.off()
+
+# Barplot to match order of tree
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/depth_prop_by_species_bar_match_tree.png", width=6, height=22, res=300, units="in")
+
+par(
+  mar=c(3, 4, 3, 1), # panel margin size in "line number" units
+  mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
+  tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
+  cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
+  ps=19, # point size, which is the font size
+  bty = 'n',
+  mfrow = c(8,1))
+
+depthbyspecies2 <- depthbyspecies[c(4,2,5,6,7,3,9,8),]
+speciesbydepth2 <- speciesbydepth[c(4,2,5,6,7,3,9,8),]
+colors_mpha2 <- colors_mpha[c(4,2,5,6,7,3,9,8)]
+
+for (j in 1:nrow(depthbyspecies2)) {
+  barplot(height=as.matrix(depthbyspecies2[j,]), names=colnames(depthbyspecies2), main = paste(rownames(depthbyspecies2)[j], ' (n = ', rowSums(speciesbydepth2)[j], ')', sep = ''), col = colors_mpha2[j], ylim = c(0,1), las = 1, cex.main = 1.5)
 }
 
 dev.off()

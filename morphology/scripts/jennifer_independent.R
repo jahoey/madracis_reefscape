@@ -715,6 +715,15 @@ aggregate(Mean_Septa ~ Species_mpha, data = septa.trimmed, FUN = summary_stats)
 # ic.dist.trimmed # colonies with data for IC dist
 ic.dist.trimmed.white.quality # colonies with quality data for IC dist
 
+ic.dist.trimmed.white.quality <- ic.dist.trimmed.white.quality %>% # Remove 'lineage' notation from labels
+  mutate(Species_mpha = case_when(
+    Species_mpha == "MPHA.ln1" ~ "MPHA1",
+    Species_mpha == "MPHA.ln2" ~ "MPHA2",
+    Species_mpha == "MSEN.ln1" ~ "MSEN1",
+    Species_mpha == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ Species_mpha          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
 # All IC dist data
 # ic.dist.trimmed$Species_mpha <- factor(ic.dist.trimmed$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MPHA.ln4", "MSEN", "UNKN"))
 # 
@@ -818,7 +827,7 @@ ic.dist.trimmed.white.quality # colonies with quality data for IC dist
 # dev.off()
 
 # White quality only for IC dist
-ic.dist.trimmed.white.quality$Species_mpha <- factor(ic.dist.trimmed.white.quality$Species_mpha, levels = c("MCAR", "MDEC", "MPHA.ln1", "MPHA.ln2", "MSEN.ln1", "MSEN.ln2"))
+ic.dist.trimmed.white.quality$Species_mpha <- factor(ic.dist.trimmed.white.quality$Species_mpha, levels = c("MCAR", "MDEC", "MPHA1", "MPHA2", "MSEN1", "MSEN2"))
 
 ic.dist.trimmed.white.quality.5 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 5),]
 ic.dist.trimmed.white.quality.10 <- ic.dist.trimmed.white.quality[which(ic.dist.trimmed.white.quality$Depth == 10),]
@@ -1084,7 +1093,7 @@ plot_boxplot_depth_anova <- function(df, y_var = "Mean_IC") {
       aes(x = Species_mpha, y = max_y * 1.05, label = Letters),
       color = "black", size = 5, fontface = "bold", na.rm = TRUE
     ) +
-    labs(x = "Genetic lineage", y = "Avg IC distance (mm)", fill = "lineage") +
+    labs(x = "Genetic taxon", y = "Avg IC distance (mm)", fill = "lineage") +
     theme_minimal(base_size = 14) +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),

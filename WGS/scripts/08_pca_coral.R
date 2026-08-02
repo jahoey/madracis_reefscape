@@ -57,7 +57,17 @@ metadata[which(metadata$id_original == 'PB_4577'),8] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4576'),8] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4579'),8] <- 'MSEN.ln2'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) #reorder the species factors
+metadata <- metadata %>% # Remove 'lineage' notation from labels
+  mutate(species_mpha = case_when(
+    species_mpha == "MPHA.ln1" ~ "MPHA1",
+    species_mpha == "MPHA.ln2" ~ "MPHA2",
+    species_mpha == "MPHA.ln3" ~ "MPHA3",
+    species_mpha == "MSEN.ln1" ~ "MSEN1",
+    species_mpha == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ species_mpha          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'UNKN')) #reorder the species factors
 
 # Set color scheme
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2; "#79d2a6" was MPHA.ln4
@@ -165,7 +175,17 @@ metadata[which(metadata$id_original == 'PB_4577'),8] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4576'),8] <- 'MSEN.ln2'
 metadata[which(metadata$id_original == 'PB_4579'),8] <- 'MSEN.ln2'
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN.ln1', 'MSEN.ln2', 'UNKN')) #reorder the species factors
+metadata <- metadata %>% # Remove 'lineage' notation from labels
+  mutate(species_mpha = case_when(
+    species_mpha == "MPHA.ln1" ~ "MPHA1",
+    species_mpha == "MPHA.ln2" ~ "MPHA2",
+    species_mpha == "MPHA.ln3" ~ "MPHA3",
+    species_mpha == "MSEN.ln1" ~ "MSEN1",
+    species_mpha == "MSEN.ln2" ~ "MSEN2",
+    TRUE ~ species_mpha          # TRUE acts as a fallback to keep other values unchanged
+  ))
+
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'UNKN')) #reorder the species factors
 
 # Set color scheme
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2; MPHA.ln4 was "#79d2a6"
@@ -202,7 +222,7 @@ par(
   mgp=c(3, 1, 0), # default is c(3,1,0); line number for axis label, tick label, axis
   tcl=-0.5, # size of tick marks as distance INTO figure (negative means pointing outward)
   cex=1, # character expansion factor; keep as 1; if you have a many-panel figure, they start changing the default!
-  ps=14, # point size, which is the font size
+  ps=18, # point size, which is the font size
   bty = 'n'
 )
 

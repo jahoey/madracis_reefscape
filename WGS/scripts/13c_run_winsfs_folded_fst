@@ -1,0 +1,145 @@
+#!/bin/bash
+#SBATCH --job-name=folded_fst
+#SBATCH --array=0-27%18
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=5G
+#SBATCH --time=30-00:00:00
+#SBATCH --output=logs/folded_fst_%A_%a.out
+#SBATCH --error=logs/folded_fst_%A_%a.err
+
+set -euo pipefail
+
+# Environment
+source /home/jhoey/programs/miniconda3/etc/profile.d/conda.sh
+conda activate angsd
+export PATH="/home/jhoey/.cargo/bin:$PATH"
+
+# Directories
+BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results/fst
+INPUTDIR=$BASEDIR/pairwise
+OUTDIR=$BASEDIR/pairwise_folded
+
+# Population pairs
+PAIRS=(
+		"MDEC MFOR"
+    "MDEC MMIR"
+    "MDEC MPHA1"
+    "MDEC MPHA2"
+    "MDEC MPHA3"
+    "MDEC MSEN1"
+    "MDEC MSEN2"
+
+    "MFOR MMIR"
+    "MFOR MPHA1"
+    "MFOR MPHA2"
+    "MFOR MPHA3"
+    "MFOR MSEN1"
+    "MFOR MSEN2"
+
+    "MMIR MPHA1"
+    "MMIR MPHA2"
+    "MMIR MPHA3"
+    "MMIR MSEN1"
+    "MMIR MSEN2"
+
+    "MPHA1 MPHA2"
+    "MPHA1 MPHA3"
+    "MPHA1 MSEN1"
+    "MPHA1 MSEN2"
+
+    "MPHA2 MPHA3"
+    "MPHA2 MSEN1"
+    "MPHA2 MSEN2"
+
+    "MPHA3 MSEN1"
+    "MPHA3 MSEN2"
+
+    "MSEN1 MSEN2"
+)
+
+PAIR=${PAIRS[$SLURM_ARRAY_TASK_ID]}
+read POP1 POP2 <<< "$PAIR"
+
+PREFIX=${POP1}_${POP2}
+
+INPUT_SFS=$INPUTDIR/${PREFIX}/${PREFIX}.2dsfs.winsfs
+OUT=$OUTDIR/${PREFIX}
+
+mkdir -p "$OUT"
+
+SAF1=$BASEDIR/merged_saf/${POP1}.saf.idx
+SAF2=$BASEDIR/merged_saf/${POP2}.saf.idx
+
+# Output files
+FOLDED_WINSFS=$OUT/${PREFIX}.2dsfs.folded.winsfs
+FOLDED_SFS=$OUT/${PREFIX}.2dsfs.folded
+FST_PREFIX=$OUT/${PREFIX}.folded
+
+echo "=========================================="
+echo "Pair: $PREFIX"
+echo "Input: $INPUT_SFS"
+echo "Output: $OUT"
+echo "=========================================="
+
+# Check input (unfolded SFS)
+if [[ ! -f "$INPUT_SFS" ]]; then
+    echo "ERROR: Missing winsfs SFS: $INPUT_SFS"
+    exit 1
+fi
+
+# Check input (SAF files for each taxon)
+if [[ ! -f "$SAF1" ]]; then
+    echo "ERROR: Missing SAF: $SAF1"
+    exit 1
+fi
+
+if [[ ! -f "$SAF2" ]]; then
+    echo "ERROR: Missing SAF: $SAF2"
+    exit 1
+fi
+
+# Fold the native winsfs SFS
+echo "Folding SFS..."
+
+winsfs view --fold "$INPUT_SFS" > "$FOLDED_WINSFS"
+
+# Extract the numeric SFS line for realSFS
+awk 'NF && $1 !~ /^#/ {line=$0} END {if (line != "") print line}' \
+    "$FOLDED_WINSFS" > "$FOLDED_SFS"
+
+# Check output
+if [[ $(wc -l < "$FOLDED_SFS") -ne 1 ]]; then
+    echo "ERROR: Folded SFS does not contain exactly one numeric line."
+    echo "Folded winsfs output:"
+    cat "$FOLDED_WINSFS"
+    exit 1
+fi
+
+echo "Folded SFS:"
+cat "$FOLDED_SFS"
+
+# Calculate FST using folded SFS
+echo "Calculating folded FST..."
+
+realSFS fst index \
+    "$SAF1" \
+    "$SAF2" \
+    -sfs "$FOLDED_SFS" \
+    -fstout "$FST_PREFIX" \
+    -whichFst 1 \
+    -P 1
+
+# Calculate summary statistics
+realSFS fst stats \
+    "${FST_PREFIX}.fst.idx" \
+    > "${FST_PREFIX}.fst.stats"
+
+echo
+echo "=========================================="
+echo "Folded FST results:"
+echo "=========================================="
+
+cat "${FST_PREFIX}.fst.stats"
+
+echo
+echo "Finished: $PREFIX"

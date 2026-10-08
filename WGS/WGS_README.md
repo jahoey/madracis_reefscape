@@ -189,7 +189,7 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 22. Using the LD-pruned SNPs, plot PCA for 606 *Madracis*
      * [08_pca_coral.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/08_pca_coral.R)
 23. Run `ngsAdmix` for 10 replicates of K = 6-16 and then concatenate results using R
-     * [09a_run_ngsadmix.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09_run_ngsadmix.sh)
+     * [09a_run_ngsadmix.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09a_run_ngsadmix.sh)
      * [09b_plot_admixture.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/09b_plot_admixture.R)
 24. Plot neighbor-joining tree using R
      * [10_plot_njtree.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/10_plot_njtree.R)
@@ -199,4 +199,30 @@ BASEDIR=~/analyses/06_Madracis_672/angsd_MMIRmapped_606noclones_results
 ## Putting it all together into something beautiful
 26. Plot a big figure illustrating interspecific *Madracis* genetic diversity
      * [A_madracis_composite606_plot.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/A_madracis_composite606_plot.R)
-
+   
+## Estimate pairwise Fst 
+27. Using [taxon_assignments.txt], split the 606 *Madracis* bam list into taxon-specific lists so that `angsd` can be rerun
+```
+for group in MDEC MFOR MMIR MPHA1 MPHA2 MPHA3 MSEN1 MSEN2; do
+    awk -F '\t' -v grp="$group" '
+        NR==FNR {
+            if (NR > 1 && $2 == grp) ids[$1]=1
+            next
+        }
+        {
+            match($0, /(JH|PB|DV)_[0-9]+/)
+            id=substr($0, RSTART, RLENGTH)
+            if (id in ids) print
+        }
+    ' taxon_assignments.txt ../angsd_no_clone_bam_list.txt > ${group}.bamlist
+done
+```
+27. Rerun `angsd` for each taxon across each of the 15 chromosomes using [run_angsd_saf.slurm]
+28. For each taxon, merge the 15 saf files using [merge_saf.slurm]
+29. Using `winsfs` and the saf files, estimate each 2D SFS. Then use `realSFS` to calculate each Fst index, followed by the global Fst
+    * For pairs that are small enough, use `winsfs` main mode: [run_winsfs_main_pairwise.slurm]
+    * For pairs that are too large, use `winsfs` streaming mode: [run_winsfs_streaming_pairwise.slurm]. Because of the way `winsfs` streaming mode works, this script can take a long time. As long as the step that generates the 2D SFS completes, [run_realSFS_fst_index_pairwise.slurm] can be used to restart the job at the Fst indexing step. Alternatively, the 2D SFS can be folded and Fst subsequently calculated with [run_winsfs_folded_fst].
+30. Concatenate the weighted Fst for each *Madracis* pair
+    * [12a_cat_fst.sh]
+31. Plot pairwise Fst matrix in R
+    * [12b_plot_fst.R]

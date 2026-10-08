@@ -217,12 +217,12 @@ for group in MDEC MFOR MMIR MPHA1 MPHA2 MPHA3 MSEN1 MSEN2; do
     ' taxon_assignments.txt ../angsd_no_clone_bam_list.txt > ${group}.bamlist
 done
 ```
-27. Rerun `angsd` for each taxon across each of the 15 chromosomes to generate site allele frequency" (SAF) likelihood files using [run_angsd_saf.slurm]
-28. For each taxon, merge the 15 saf files using [merge_saf.slurm]
+27. Rerun `angsd` for each taxon across each of the 15 chromosomes to generate site allele frequency" (SAF) likelihood files using [12a_run_angsd_saf.slurm](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/12a_run_angsd_saf.slurm)
+28. For each taxon, merge the 15 saf files using [12b_merge_saf.slurm](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/12b_merge_saf.slurm)
 29. Using `winsfs` and the saf files, estimate each 2D SFS. Then use `realSFS` to calculate each Fst index, followed by the global Fst
-    * For pairs that are small enough, use `winsfs` main mode: [run_winsfs_main_pairwise.slurm]
-    * For pairs that are too large, use `winsfs` streaming mode: [run_winsfs_streaming_pairwise.slurm]. Because of the way `winsfs` streaming mode works, this script can take a long time. As long as the step that generates the 2D SFS completes, [run_realSFS_fst_index_pairwise.slurm] can be used to restart the job at the Fst indexing step. Alternatively, if the 2D SFS estimation step is already complete, the 2D SFS can be folded and Fst subsequently calculated using [run_winsfs_folded_fst], which is what we ultimately did for this manuscript.
+    * For pairs that are small enough, use `winsfs` main mode: [13a_run_winsfs_main_pairwise.slurm](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/13a_run_winsfs_main_pairwise.slurm)
+    * For pairs that are too large, use `winsfs` streaming mode: [13b_run_winsfs_streaming_pairwise.slurm](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/13b_run_winsfs_streaming_pairwise.slurm). Because of the way `winsfs` streaming mode works, this script can take a long time. As long as the step that generates the 2D SFS completes, [13c_run_realSFS_fst_index_pairwise.slurm](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/13c_run_winsfs_folded_fst) can be used to restart the job at the Fst indexing step. Alternatively, if the 2D SFS estimation step is already complete, the 2D SFS can be folded and Fst subsequently calculated using [run_winsfs_folded_fst], which is what we ultimately did for this manuscript.
 30. Concatenate the weighted Fst for each *Madracis* pair
-    * [12a_cat_fst.sh]
+    * [14a_cat_fst.sh](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/14a_cat_fst.sh)
 31. Plot pairwise Fst matrix in R
-    * [12b_plot_fst.R]
+    * [14b_plot_fst.R](https://github.com/jahoey/madracis_reefscape/blob/main/WGS/scripts/14b_plot_fst.R)

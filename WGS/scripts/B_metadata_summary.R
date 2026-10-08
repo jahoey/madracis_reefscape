@@ -38,10 +38,11 @@ metadata <- metadata %>% # Remove 'lineage' notation from labels
     species_mpha == "MPHA.ln3" ~ "MPHA3",
     species_mpha == "MSEN.ln1" ~ "MSEN1",
     species_mpha == "MSEN.ln2" ~ "MSEN2",
+    species_mpha == "UNKN" ~ "MPHA hybrid",
     TRUE ~ species_mpha          # TRUE acts as a fallback to keep other values unchanged
   ))
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'UNKN')) #reorder the species factors
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'MPHA hybrid')) #reorder the species factors
 
 #### Set color scheme ####
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2
@@ -149,7 +150,7 @@ for (j in 1:ncol(speciesbydepth)) {
 # Add x-axis labels and axis title for the combined plot
 text(x = c(0.7, 1.9, 3.1, 4.3, 5.5, 6.7, 7.9, 9.1, 10.3, 11.5),
      y = par("usr")[3] - 10,
-     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA1","MPHA2", "MPHA3","MSEN1", "MSEN2", "UNKN"),
+     labels = c("MCAR", "MDEC", "MFOR", "MMIR","MPHA1","MPHA2", "MPHA3","MSEN1", "MSEN2", "MPHA hybrid"),
      xpd = NA, srt = 35, adj = 0.965)
 
 mtext('Genetic taxon', side = 1, line = 5.75)

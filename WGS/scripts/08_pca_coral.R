@@ -10,6 +10,7 @@ library(ape)
 library(ggtree)
 library(MASS)
 library(adegenet)
+library(dplyr)
 
 add.alpha <- function(col, alpha=1){
   if(missing(col))
@@ -182,10 +183,11 @@ metadata <- metadata %>% # Remove 'lineage' notation from labels
     species_mpha == "MPHA.ln3" ~ "MPHA3",
     species_mpha == "MSEN.ln1" ~ "MSEN1",
     species_mpha == "MSEN.ln2" ~ "MSEN2",
+    species_mpha == "UNKN" ~ "MPHA hybrid",
     TRUE ~ species_mpha          # TRUE acts as a fallback to keep other values unchanged
   ))
 
-metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'UNKN')) #reorder the species factors
+metadata$species_mpha <- factor(metadata$species_mpha, levels = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA1', 'MPHA2', 'MPHA3', 'MSEN1', 'MSEN2', 'MPHA hybrid')) #reorder the species factors
 
 # Set color scheme
 colors_mpha <- c("#ff6347", "#ff9a81", "#E7298A", "#E6AB02", "#b6c590", "#6b8e23", "#374618", "#b0e0e6", "cornflowerblue", "gray70") # colors for MSEN.ln2; MPHA.ln4 was "#79d2a6"
@@ -215,7 +217,7 @@ plot(pca)
 ######################################################################################################################################
 #### Base plot for pcangsd covariance matrix ####
 # By species, PC1 vs PC2
-png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/madracis606_coralpca_pcangsd_unlinked.png", width=7.5, height=7, res=300, units="in")
+png(file="~/Documents/CalAcademy_postdoc/Analyses/madracis_reefscape/WGS/angsd_results/madracis606/madracis606_coralpca_pcangsd_unlinked2.png", width=6.5, height=6, res=500, units="in")
 
 par(
   mar=c(4, 3, 3, 1), # panel margin size in "line number" units
@@ -230,9 +232,9 @@ plot(pca.vectors$X1, pca.vectors$X2, col = add.alpha(colors_mpha[factor(metadata
 axis(1, at=seq(-0.02,0.1, by=0.02), labels=seq(-0.02,0.1, by= 0.02), line = -1)
 axis(2, at=seq(-0.1,0.05, by = 0.05), labels=seq(-0.1,0.05, by= 0.05), line = -2, las = 2)
 mtext("PC1 (16.58%)", side = 1, line = 2) # modify variance explained to match dataset
-mtext("PC2 (5.18%)", side = 2, line = 1) # modify variance explained to match dataset
+mtext("     PC2 (5.18%)", side = 2, line = 1.5) # modify variance explained to match dataset
 
-legend(0.070,-0.03, 
+legend(0.060,-0.02, 
        legend = levels(factor(metadata$species_mpha)),
        pch = 19,
        col = add.alpha(colors_mpha, 0.7),

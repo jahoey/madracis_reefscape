@@ -48,7 +48,7 @@ madracis_clusters_k7 <- read.delim(here("WGS/angsd_results/madracis606/admixture
 # Cluster assignments (from nsgadmix K=8)
 madracis_clusters_k8 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K8_3_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster7", "cluster5", "cluster6", "cluster1", "cluster3", "cluster8", "cluster4"))
 
-# # Cluster assignments (from nsgadmix K=9)
+# Cluster assignments (from nsgadmix K=9)
 madracis_clusters_k9 <- read.delim(here("WGS/angsd_results/madracis606/admixture/qfiles/madracis606_ngsAdmix_K9_9_out.qopt"), header = FALSE, sep = "", col.names = c("cluster2", "cluster5", "cluster6", "cluster7", "cluster4", "cluster8", "cluster9", "cluster3", "cluster1")) # lots of different topologies across the reps
 
 # Cluster assignments (from nsgadmix K=10)
@@ -210,8 +210,9 @@ species.table2 <- species.table[match(tree_reroot_names, species.table$sample_fu
 # cluster.table <- madracis653_assigns_k8[match(tree_reroot_names, madracis653_assigns_k8$ID),] # order species table by new exact tip order
 # cluster.table$max.cluster.num <- gsub("cluster", "", cluster.table$max.cluster)# remove 'cluster' from max.cluster
 
+# Tree for composite figure
 p1 <- njtree %<+% species.table2 +
-      geom_tiplab(aes(color = factor(species_mpha)), align=TRUE, size=2, linesize=0.5, hjust = -0.05, show.legend = FALSE) + 
+      geom_tiplab(aes(color = factor(species_mpha)), align=TRUE, size=2, linesize=0.5, hjust = -0.05, show.legend = FALSE) +
       geom_tippoint(aes(color = factor(species_mpha), shape = factor(species_mpha)), align=TRUE, size=2)  +
       scale_color_manual(values = colors_mpha, limits = c('MCAR','MDEC', 'MFOR', 'MMIR', 'MPHA.ln1', 'MPHA.ln2', 'MPHA.ln3', 'MSEN-like MPHA', 'MSEN', 'UNKN')) + scale_shape_manual(values = rep(19,10)) +  theme(legend.text = element_text(size=15), legend.title = element_blank(), legend.key.size = unit(0.8, 'cm')) + xlim_tree(0.3)
 

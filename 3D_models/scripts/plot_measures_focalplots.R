@@ -206,7 +206,7 @@ plot_boxplot_facet_anova <- function(df, y_vars) {
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(measure ~ site, scales = "free_y", switch = "y",
                labeller = labeller(
-                 measure = c(gap_fill_new = "habitat\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +  # Removed depth facetting
+                 measure = c(gap_fill_new = "structural\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +  # Removed depth facetting
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.15, label = Letters),  # Lowered letters
               inherit.aes = FALSE, color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
@@ -367,7 +367,7 @@ plot_boxplot_anova_multi_pub <- function(df, y_vars) {
     geom_jitter(width = 0.2, alpha = 0.3, size = 2) +
     facet_grid(variable ~ depth, scales = "free", space = "free_x", switch = "y", 
                labeller = labeller(
-      variable = c(gap_fill_new = "habitat\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +
+      variable = c(gap_fill_new = "structural\nopenness", elevation = "colony\nangle", vector_disp = "substrate\ncomplexity"))) +
     geom_text(data = tukey_results, 
               aes(x = label, y = max_y * 1.05, label = Letters),
               color = "black", size = 4, fontface = "bold", na.rm = TRUE) +
@@ -439,7 +439,7 @@ mad_ann_seq_core_reduced2_gfixed <- merge(mad_ann_seq_core_reduced2, gap_fill_re
 # Create new column
 mad_ann_seq_core_reduced2_gfixed$gap_fill_new <- ifelse(is.na(mad_ann_seq_core_reduced2_gfixed$gap_fill_fix), mad_ann_seq_core_reduced2_gfixed$gapF_fill, mad_ann_seq_core_reduced2_gfixed$gap_fill_fix) # 291 x 30
 
-# Remove coral for which gap fraction could noot be manually fixed; 290 x 28
+# Remove coral for which gap fraction could not be manually fixed; 290 x 28
 mad_ann_seq_core_reduced2_gfixed2 <- mad_ann_seq_core_reduced2_gfixed[mad_ann_seq_core_reduced2_gfixed$id != 'JH_0423',] 
 
 #### For the 20m only dataset ####
